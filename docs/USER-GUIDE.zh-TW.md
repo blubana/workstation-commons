@@ -32,7 +32,7 @@ Host compute
     User <帳號>
 ```
 
-之後只要打 `ssh compute`。登入後會看到一個摘要畫面（fastfetch），列出硬體、你的記憶體額度、執行中的 kernel 和 NPU 狀態。不想看到就執行 `touch ~/.hushfetch`。
+之後只要打 `ssh compute`。登入後會看到一個摘要畫面（fastfetch），列出硬體、你的記憶體額度、執行中的 kernel 和 NPU 狀態。登入畫面也是你的「連線卡」：列出你專屬的 ssh、scp、termscp、Spyder 連線字串（依你從區網或 Tailscale 連入自動切換 IP）、正在執行的 kernel、GPU 與服務狀態。隨時輸入 `cm-info` 再顯示一次；不想看到就執行 `touch ~/.hushfetch`。
 
 ## 3. 硬體與分配規則
 
@@ -164,7 +164,11 @@ import socket, getpass, sys
 print(socket.gethostname(), getpass.getuser(), sys.executable)   # SERVER <帳號> /opt/conda/envs/...
 ```
 
-**傳資料**（在自己電腦的終端機）
+**傳資料**
+
+最簡單：在自己電腦安裝 [termscp](https://github.com/veeso/termscp)（macOS `brew install termscp`、Windows `winget install termscp`、Linux `cargo install termscp`），執行登入畫面「File browser」那行（`termscp sftp://<帳號>@<IP>:2200`），左欄本機、右欄伺服器，選檔案按 `Space` 傳送。
+
+也可以用指令（在自己電腦的終端機）：
 ```bash
 scp -P 2200 mydata.csv <帳號>@192.168.1.10:~/data/
 scp -P 2200 <帳號>@192.168.1.10:~/data/result.csv .

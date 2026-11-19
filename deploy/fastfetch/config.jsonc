@@ -19,6 +19,14 @@
     { "type": "command", "key": "My kernels", "keyColor": "cyan", "text": "/usr/local/libexec/compute-fetch/compute-info kernels" },
     { "type": "command", "key": "Envs", "keyColor": "cyan", "text": "/usr/local/libexec/compute-fetch/compute-info envs" },
     { "type": "command", "key": "NPU", "keyColor": "cyan", "text": "/usr/local/libexec/compute-fetch/compute-info npu" },
+    { "type": "command", "key": "GPU now", "keyColor": "cyan", "text": "/usr/local/libexec/compute-fetch/compute-info gpu" },
+    { "type": "command", "key": "Services", "keyColor": "cyan", "text": "/usr/local/libexec/compute-fetch/compute-info services" },
+    "break",
+    { "type": "command", "key": "Connect", "keyColor": "yellow", "text": "/usr/local/libexec/compute-fetch/compute-info connect" },
+    { "type": "command", "key": "Copy files", "keyColor": "yellow", "text": "/usr/local/libexec/compute-fetch/compute-info copy" },
+    { "type": "command", "key": "File browser", "keyColor": "yellow", "text": "/usr/local/libexec/compute-fetch/compute-info termscp" },
+    { "type": "command", "key": "Spyder", "keyColor": "yellow", "text": "/usr/local/libexec/compute-fetch/compute-info spyder" },
+    { "type": "command", "key": "Live kernels", "keyColor": "yellow", "text": "/usr/local/libexec/compute-fetch/compute-info mykernels" },
     "break",
     "colors"
   ]

@@ -4,7 +4,33 @@ what=${1:-}
 uid=$(id -u)
 slice="user-$uid.slice"
 gb() { awk -v b="$1" 'BEGIN{ if (b ~ /^[0-9]+$/) printf "%.1fG", b/1073741824; else print "n/a" }'; }
+[ -r /etc/compute-mgr/connect.conf ] && . /etc/compute-mgr/connect.conf
+PORT=${PORT:-2200}
+client=${SSH_CONNECTION%% *}
+case "$client" in 100.*) HOST=${TS_HOST:-}; via="Tailscale" ;; *) HOST=${LAN_HOST:-}; via="LAN" ;; esac
+me=$(id -un)
 case "$what" in
+  connect)
+    echo "ssh -p $PORT $me@$HOST   ($via)" ;;
+  copy)
+    echo "scp -P $PORT <file> $me@$HOST:~/data/   ·   rsync -av -e 'ssh -p $PORT' ./dir/ $me@$HOST:~/dir/" ;;
+  termscp)
+    echo "termscp sftp://$me@$HOST:$PORT   (on your computer · install: brew/winget/cargo install termscp)" ;;
+  spyder)
+    echo "Hostname $me@$HOST:$PORT · Keyfile ~/.ssh/id_ed25519 · start: spyder-kernel sci|sci-spyder5|sci-legacy" ;;
+  mykernels)
+    rt=$HOME/.local/share/jupyter/runtime; out=""
+    for f in "$rt"/kernel-*.json; do
+      [ -e "$f" ] || continue
+      pgrep -u "$uid" -f -- "$f" >/dev/null 2>&1 && out="$out$(basename "$f") "
+    done
+    if [ -n "$out" ]; then echo "$out→ scp -P $PORT $me@$HOST:$rt/<file> ."; else echo "none · start one: spyder-kernel sci"; fi ;;
+  gpu)
+    nvidia-smi --query-gpu=utilization.gpu,memory.used,memory.total --format=csv,noheader,nounits 2>/dev/null \
+      | awk -F', *' '{printf "RTX 5080 · %s%% busy · VRAM %.1f / %.1f GB\n", $1, $2/1024, $3/1024}' || echo "n/a" ;;
+  services)
+    s1=$(systemctl is-active compute-mgrd 2>/dev/null); s2=$(systemctl is-active systemd-oomd 2>/dev/null)
+    echo "manager $s1 · oom guard $s2" ;;
   mem)
     cg=/sys/fs/cgroup/user.slice/$slice
     cur=$(cat "$cg/memory.current" 2>/dev/null || echo n/a)

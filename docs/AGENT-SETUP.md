@@ -49,6 +49,7 @@ Detect the OS yourself (`uname` / `$env:OS`); don't ask.
    Include only the hosts matching answer 2. On Windows, make sure the private key's ACL allows only the user (`icacls <key> /inheritance:r /grant:r "%USERNAME%:R"`), else ssh rejects it.
 5. **Optional helper for Spyder** (if answer 3 ≠ none): create `~/compute-kernel.sh` (or `.ps1`) that runs
    `ssh compute spyder-kernel <env>`, parses the printed `connection file:` path, and `scp -P 2200`s it into `~/compute-kernels/`. Env from answer 3.
+5b. **File transfer**: install termscp if missing (macOS `brew install termscp`, Windows `winget install termscp`, else `cargo install termscp`; ask before installing Homebrew/Rust themselves). Tell the user: `termscp sftp://<account>@<host>:2200`.
 6. **Test**: `ssh -o BatchMode=yes compute 'echo ok && whoami'`. Expected `ok` and the account. On `Permission denied (publickey)`: the admin has not added the key yet, or the wrong key is used.
 7. **Report to the user**: what was created (paths), the command to start a kernel, and the Spyder dialog values:
    Connect to an existing kernel → the downloaded `.json` → "remote kernel via SSH" → Hostname `<account>@192.168.1.10:2200` → Keyfile `~/.ssh/id_ed25519`.

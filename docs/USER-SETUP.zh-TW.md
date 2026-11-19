@@ -62,7 +62,14 @@ ssh compute
 - 第一次會問 `Are you sure you want to continue connecting?`，輸入 `yes`。
 - 有設 passphrase 會要你輸入。
 
-✅ 看到伺服器資訊畫面和 `你的帳號@SERVER:~$` 就成功了。輸入 `exit` 離開。
+✅ 看到伺服器資訊畫面和 `你的帳號@SERVER:~$` 就成功了。畫面黃色的部分是你專屬的連線指令，之後忘記了就登入看，或輸入 `cm-info`。輸入 `exit` 離開。
+
+## 步驟 7.5：安裝檔案傳輸工具 termscp（建議）
+- macOS：`brew install termscp`
+- Windows：`winget install termscp`
+- Linux：`cargo install termscp`
+
+執行 `termscp sftp://你的帳號@192.168.1.10:2200`，左邊是你的電腦、右邊是伺服器，選檔案按 `Space` 傳送，`q` 離開。
 
 ## 步驟 8：連接 Spyder（選用）
 1. 啟動 kernel：`ssh compute spyder-kernel sci`（Spyder 5 用 `sci-spyder5`，Spyder 3 用 `sci-legacy`）。記下印出的 `connection file:` 路徑。

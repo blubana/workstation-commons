@@ -14,5 +14,6 @@ fi
 install -d -m755 /etc/xdg/fastfetch /usr/local/libexec/compute-fetch
 install -m644 "$SRC/fastfetch/config.jsonc" /etc/xdg/fastfetch/config.jsonc
 install -m755 "$SRC/fastfetch/compute-info" /usr/local/libexec/compute-fetch/compute-info
+install -m644 "$SRC/fastfetch/connect.conf" /etc/compute-mgr/connect.conf
 install -m644 "$SRC/fastfetch/profile.sh" /etc/profile.d/zz-fastfetch.sh
 fastfetch --version
