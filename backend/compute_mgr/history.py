@@ -35,6 +35,11 @@ class History:
             )
             db.execute("DELETE FROM samples WHERE time < ?", (timestamp - RETENTION,))
 
+    def purge_user(self, user):
+        """Drop retained samples of a name before a new account reuses it (A1)."""
+        with closing(sqlite3.connect(self.path)) as db, db:
+            return db.execute("DELETE FROM samples WHERE user = ?", (user,)).rowcount
+
     def points(self, metric, user, since, step):
         now = time.time()
         start = max(since, now - RETENTION)

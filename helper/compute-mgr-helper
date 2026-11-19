@@ -239,6 +239,7 @@ def op_user_add(a):
     pw = v_user(a.get("user"))
     line, fp = v_pubkey(a.get("pubkey"))
     reg = managed()
+    created = pw is None
     if pw is None:
         run(["useradd", "-m", "-s", "/bin/bash", "-G", COMPUTE_GROUP, a["user"]])
         pw = pwd.getpwnam(a["user"])
@@ -254,7 +255,7 @@ def op_user_add(a):
         keys.append(line)
     write_keys(pw, keys)
     run(["loginctl", "enable-linger", a["user"]])
-    return {"user": a["user"], "fingerprint": fp}
+    return {"user": a["user"], "fingerprint": fp, "created": created}
 
 
 def op_user_disable(a):

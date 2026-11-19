@@ -216,7 +216,10 @@ def create_app(*, collector=None, history=None, resolve_uid=identity.resolve_uid
 
     @app.post("/api/v1/users")
     def add_user(body: NewUser, actor: Administrator):
-        return user_mutation("user-add", body.model_dump(), actor)
+        result = user_mutation("user-add", body.model_dump(), actor)
+        if result.get("created"):
+            history.purge_user(body.user)      # a reused name must not inherit old metrics (A1)
+        return result
 
     @app.delete("/api/v1/users/{user}")
     def disable_user(user: str, actor: Administrator):

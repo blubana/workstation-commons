@@ -222,3 +222,27 @@ def test_npu_run_success_returns_worker_output(api, monkeypatch):
     asyncio.run(app(request_scope("/api/v1/npu/run", method="POST"), receive, send))
     assert sent[0]["status"] == 200
     assert b"".join(m.get("body", b"") for m in sent[1:]) == b"NPZDATA"
+
+
+@pytest.mark.parametrize("created", [True, False])
+def test_new_account_purges_reused_name_history(api, monkeypatch, created):
+    """A1: only a newly created account (name reuse) loses old samples; re-enable keeps them."""
+    app, history = api
+    history.initialize()
+    now = time.time()
+    history.record(now - 60, [("user_mem", "bob", 1.0), ("user_mem", "carol", 2.0)])
+    monkeypatch.setattr(helper, "call", lambda op, args, actor: {"ok": True, "user": "bob", "created": created})
+    sent = []
+
+    async def receive():
+        return {"type": "http.request", "body": json.dumps({"user": "bob", "pubkey": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIA"}).encode(), "more_body": False}
+
+    async def send(m):
+        sent.append(m)
+
+    asyncio.run(app(request_scope("/api/v1/users", uid=1000, method="POST",
+                                  headers=[(b"content-type", b"application/json")]), receive, send))
+    assert sent[0]["status"] == 200, sent
+    left = {u for u in ("bob", "carol") if history.points("user_mem", u, now - 3600, 10)}
+    assert ("bob" in left) is (not created)
+    assert "carol" in left
