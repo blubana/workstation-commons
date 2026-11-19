@@ -35,6 +35,8 @@ def audit(limit):
             for line in log:
                 try:
                     event = json.loads(line)
+                    if event.get("phase") == "attempt":
+                        continue          # pre-mutation record; the result line carries the outcome
                     latest.append({key: event[key] for key in ("time", "actor", "action", "target", "ok")})
                 except (ValueError, KeyError, TypeError):
                     continue

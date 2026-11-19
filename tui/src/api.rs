@@ -498,6 +498,8 @@ mod tests {
         };
         assert_eq!(log.len(), 8);
         assert!(log[..6].iter().all(|entry| entry.ok));
+        let pending: Audit = serde_json::from_str(r#"{"time":1,"actor":"a","action":"user-add","target":"b","ok":null}"#).unwrap();
+        assert!(!pending.ok);
         assert_eq!(log[0].action, "user-disable");
     }
 
@@ -576,8 +578,13 @@ pub struct Audit {
     pub actor: String,
     pub action: String,
     pub target: String,
+    #[serde(default, deserialize_with = "null_as_false")]
     pub ok: bool,
     pub detail: Option<String>,
+}
+
+fn null_as_false<'de, D: serde::Deserializer<'de>>(d: D) -> std::result::Result<bool, D::Error> {
+    Ok(Option::<bool>::deserialize(d)?.unwrap_or(false))
 }
 
 pub const METRICS: [&str; 11] = [

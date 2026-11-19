@@ -268,7 +268,11 @@ impl Screen {
         enable_raw_mode()?;
         execute!(self.terminal.backend_mut(), EnterAlternateScreen, EnableBracketedPaste)?;
         self.terminal.hide_cursor()?;
-        self.terminal.clear()
+        // Not terminal.clear(): since ratatui 0.30 it queries the cursor position (CPR), which
+        // fails on terminals / SSH links that do not answer in time. resize() on a fullscreen
+        // viewport clears and resets the buffers without that query.
+        let size = self.terminal.size()?;
+        self.terminal.resize(ratatui::layout::Rect::new(0, 0, size.width, size.height))
     }
 
     fn suspend(&mut self) -> io::Result<()> {
