@@ -96,6 +96,7 @@ mod tests {
 
     #[test]
     fn layout_persistence_round_trip() {
+        // nosemgrep: rust.lang.security.temp-dir.temp-dir -- unit test fixture only
         let dir = env::temp_dir().join(format!("cm-top-state-{}", std::process::id()));
         let file = dir.join("config/state.toml");
         assert_eq!(Layout::load(&file), Layout::Console);

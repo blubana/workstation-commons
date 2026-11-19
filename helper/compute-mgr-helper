@@ -203,6 +203,7 @@ def _write_keys_u(pw, lines):
     os.makedirs(".ssh", mode=0o700, exist_ok=True)
     if os.path.islink(".ssh") or not os.path.isdir(".ssh"):
         raise Bad("~/.ssh is not a directory")
+    # nosemgrep: python.lang.security.audit.insecure-file-permissions.insecure-file-permissions -- 0o700 is the restrictive mode sshd requires; runs as the target uid
     os.chmod(".ssh", 0o700)
     tmp = ".ssh/authorized_keys.cm-tmp"
     fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW, 0o600)

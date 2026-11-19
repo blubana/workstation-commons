@@ -47,6 +47,7 @@ fn main() -> ExitCode {
 }
 
 fn run() -> Result<(), Box<dyn std::error::Error>> {
+    // nosemgrep: rust.lang.security.args.args -- CLI option parsing; argv[0] is never used for security decisions
     let mut args = env::args().skip(1);
     let mut mock = None;
     let mut frame = None;
