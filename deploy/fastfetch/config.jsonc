@@ -1,0 +1,25 @@
+// Shared fastfetch config for compute users (/etc/xdg/fastfetch/config.jsonc).
+// Override per user with ~/.config/fastfetch/config.jsonc.
+{
+  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+  "logo": { "type": "builtin", "source": "ubuntu_small", "padding": { "top": 1 } },
+  "display": { "separator": " ", "key": { "width": 13 } },
+  "modules": [
+    "title",
+    "separator",
+    { "type": "os", "key": "OS" },
+    { "type": "kernel", "key": "Kernel" },
+    { "type": "uptime", "key": "Uptime" },
+    { "type": "cpu", "key": "CPU", "temp": false },
+    { "type": "gpu", "key": "GPU", "hideType": "integrated" },
+    { "type": "memory", "key": "Memory" },
+    { "type": "disk", "key": "Disk /", "folders": "/" },
+    "break",
+    { "type": "command", "key": "My memory", "keyColor": "cyan", "text": "/usr/local/libexec/compute-fetch/compute-info mem" },
+    { "type": "command", "key": "My kernels", "keyColor": "cyan", "text": "/usr/local/libexec/compute-fetch/compute-info kernels" },
+    { "type": "command", "key": "Envs", "keyColor": "cyan", "text": "/usr/local/libexec/compute-fetch/compute-info envs" },
+    { "type": "command", "key": "NPU", "keyColor": "cyan", "text": "/usr/local/libexec/compute-fetch/compute-info npu" },
+    "break",
+    "colors"
+  ]
+}

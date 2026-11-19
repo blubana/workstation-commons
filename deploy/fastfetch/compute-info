@@ -1,0 +1,31 @@
+#!/bin/bash
+# Per-user compute facts for fastfetch. Must be fast and never fail.
+what=${1:-}
+uid=$(id -u)
+slice="user-$uid.slice"
+gb() { awk -v b="$1" 'BEGIN{ if (b ~ /^[0-9]+$/) printf "%.1fG", b/1073741824; else print "n/a" }'; }
+case "$what" in
+  mem)
+    cg=/sys/fs/cgroup/user.slice/$slice
+    cur=$(cat "$cg/memory.current" 2>/dev/null || echo n/a)
+    low=$(systemctl show "$slice" -p MemoryLow --value 2>/dev/null)
+    high=$(systemctl show "$slice" -p MemoryHigh --value 2>/dev/null)
+    if [ "$low" = "0" ] || [ -z "$low" ]; then   # slice not started yet: read the template policy
+      low=$(sed -n 's/^MemoryLow=//p' /etc/systemd/system/user-.slice.d/50-limits.conf 2>/dev/null | numfmt --from=iec 2>/dev/null)
+      high=$(sed -n 's/^MemoryHigh=//p' /etc/systemd/system/user-.slice.d/50-limits.conf 2>/dev/null | numfmt --from=iec 2>/dev/null)
+    fi
+    echo "$(gb "$cur") used · guaranteed $(gb "$low") · soft cap $(gb "$high")" ;;
+  kernels)
+    n=$(pgrep -u "$uid" -fc 'ipykernel_launcher|spyder_kernels.console|ipykernel' 2>/dev/null || true)
+    echo "${n:-0} running" ;;
+  envs)
+    ls /opt/conda/envs 2>/dev/null | tr '\n' ' ' ;;
+  npu)
+    s=$(timeout 2 curl -s --unix-socket /run/compute-mgr/api.sock http://x/api/v1/npu/status 2>/dev/null)
+    python3 -I -c 'import json,sys
+try:
+    d=json.loads(sys.argv[1]); q=d.get("queued") or {}
+    busy="busy" if d.get("active") else "idle"
+    print(("%s · %s · queue %s" % ((d.get("npu") or {}).get("name","NPU"), busy, sum(v or 0 for v in q.values()))) if d.get("up") else "worker down")
+except Exception: print("n/a")' "$s" ;;
+esac
