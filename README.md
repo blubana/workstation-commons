@@ -168,7 +168,7 @@ This is a trusted small-team server, not a sandbox for hostile tenants.
    copies `tui/cm-top` if it already exists:
 
    ```bash
-   (cd tui && cargo build --release)
+   (cd tui && cargo build --release --locked)
    install -m755 tui/target/release/cm-top tui/cm-top
    sudo bash deploy/install-compute-mgr.sh
    ```
@@ -334,7 +334,7 @@ With Python 3.12+, `uv` and a Rust toolchain:
 cd backend
 uv run pytest
 cd ../tui
-cargo test
+cargo test --locked
 cargo run -- --mock fixtures --frame console:overview
 # With cm-top built/installed, from tui/:
 cm-top --mock fixtures --frame console:overview

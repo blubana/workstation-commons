@@ -8,7 +8,7 @@ CONDA_PKGS="numpy scipy pandas polars pyarrow matplotlib seaborn plotly bokeh al
  xgboost lightgbm catboost optuna shap imbalanced-learn umap-learn hdbscan
  opencv pillow tifffile pywavelets nltk spacy gensim
  requests beautifulsoup4 lxml pydantic"
-PIP_TORCH="torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128"
+PIP_TORCH="torch==2.11.0 torchvision==0.26.0 torchaudio==2.11.0 --index-url https://download.pytorch.org/whl/cu128"
 PIP_PKGS="transformers datasets accelerate sentence-transformers tokenizers safetensors evaluate peft
  onnx onnxruntime-gpu openvino ovmsclient tritonclient[http] lightning torchmetrics timm einops
  tensorboard mlflow-skinny"
@@ -25,4 +25,4 @@ import torch
 print(sys.prefix, "torch", torch.__version__, "cuda", torch.cuda.is_available(), torch.cuda.get_device_name(0) if torch.cuda.is_available() else "-", "missing:", bad)
 PY
 done
-chmod -R a+rX /opt/conda
+chmod -R u+rwX,go+rX,go-w /opt/conda

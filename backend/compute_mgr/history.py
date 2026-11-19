@@ -7,6 +7,7 @@ from pathlib import Path
 
 RETENTION = 30 * 24 * 60 * 60
 INTERVAL = 10
+MAX_BUCKETS = 2000
 BYTE_METRICS = {"mem_used", "gpu_mem_used", "user_mem"}
 
 
@@ -35,13 +36,17 @@ class History:
             db.execute("DELETE FROM samples WHERE time < ?", (timestamp - RETENTION,))
 
     def points(self, metric, user, since, step):
+        now = time.time()
+        start = max(since, now - RETENTION)
+        step = max(step, (now - start) / (MAX_BUCKETS - 1))
         with closing(sqlite3.connect(self.path)) as db:
             rows = db.execute("""
                 SELECT MIN(time), AVG(value) FROM samples
                 WHERE metric = ? AND user = ? AND time >= ?
                 GROUP BY CAST((time - ?) / ? AS INTEGER)
                 ORDER BY MIN(time)
-            """, (metric, user or "", max(since, time.time() - RETENTION), since, step))
+                LIMIT ?
+            """, (metric, user or "", start, since, step, MAX_BUCKETS))
             return [
                 [timestamp, round(value) if metric in BYTE_METRICS and value is not None else value]
                 for timestamp, value in rows

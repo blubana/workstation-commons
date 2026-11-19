@@ -14,6 +14,8 @@ import subprocess
 import threading
 import time
 
+from .credentials import safe_mode
+
 SSH_KEY = os.getenv("CM_WIN_INFO_KEY", "/etc/compute-mgr/win-info")
 SSH_TARGET = os.getenv("CM_WIN_TARGET", "Administrator@127.0.0.1")
 KNOWN_HOSTS = os.getenv("CM_WIN_KNOWN_HOSTS", "/etc/compute-mgr/known_hosts")
@@ -24,6 +26,8 @@ _lock = threading.Lock()
 
 def _host_json():
     try:
+        if not safe_mode(SSH_KEY, os.stat(SSH_KEY).st_mode):
+            return None
         r = subprocess.run(["ssh", "-o", "BatchMode=yes", "-o", f"UserKnownHostsFile={KNOWN_HOSTS}",
                             "-o", "StrictHostKeyChecking=yes", "-o", "ConnectTimeout=5", "-i", SSH_KEY, SSH_TARGET],
                            capture_output=True, text=True, timeout=40)

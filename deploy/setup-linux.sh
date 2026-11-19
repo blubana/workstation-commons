@@ -36,8 +36,28 @@ C
 systemctl daemon-reload
 # shared Miniforge
 if [ ! -x /opt/conda/bin/conda ]; then
-  curl -fsSL -o /tmp/mf.sh https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh
-  bash /tmp/mf.sh -b -p /opt/conda
+  (
+    MINIFORGE_VERSION=${MINIFORGE_VERSION:-25.11.0-1}
+    if [ "$MINIFORGE_VERSION" = 25.11.0-1 ]; then
+      MINIFORGE_SHA256=${MINIFORGE_SHA256-be1bad9d4e67a8753eb76fb4940e9a08036786675c7adf060627e55791bf110d}
+    fi
+    [[ "$MINIFORGE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+-[0-9]+$ ]]
+    mf_dir=$(mktemp -d)
+    trap 'rm -rf -- "$mf_dir"' EXIT
+    cd "$mf_dir"
+    artifact="Miniforge3-$MINIFORGE_VERSION-Linux-x86_64.sh"
+    url="https://github.com/conda-forge/miniforge/releases/download/$MINIFORGE_VERSION/$artifact"
+    curl -fsSL -o "$artifact" "$url"
+    curl -fsSL -o "$artifact.sha256" "$url.sha256"
+    read -r release_digest _ < "$artifact.sha256"
+    [[ "$release_digest" =~ ^[[:xdigit:]]{64}$ ]]
+    printf '%s  %s\n' "$release_digest" "$artifact" | sha256sum --check --strict
+    if [[ -v MINIFORGE_SHA256 ]]; then
+      [[ "$MINIFORGE_SHA256" =~ ^[[:xdigit:]]{64}$ ]]
+      printf '%s  %s\n' "$MINIFORGE_SHA256" "$artifact" | sha256sum --check --strict
+    fi
+    bash "$artifact" -b -p /opt/conda
+  )
 fi
 cat > /etc/profile.d/conda.sh <<'C'
 . /opt/conda/etc/profile.d/conda.sh

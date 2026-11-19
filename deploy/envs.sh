@@ -8,7 +8,7 @@ $C create -y -q -p /opt/conda/envs/sci -c conda-forge python=3.12 numpy scipy pa
 $C create -y -q -p /opt/conda/envs/sci-spyder5 -c conda-forge python=3.11 numpy scipy pandas matplotlib numba cupy cuda-version=12.8 'spyder-kernels>=2.5,<2.6' >/dev/null
 # Spyder 3.2.x: plain ipykernel (3.2 predates spyder-kernels)
 $C create -y -q -p /opt/conda/envs/sci-legacy -c conda-forge python=3.11 numpy scipy pandas matplotlib numba cupy cuda-version=12.8 'ipykernel>=6,<7' >/dev/null
-chmod -R a+rX /opt/conda
+chmod -R u+rwX,go+rX,go-w /opt/conda
 cat > /usr/local/bin/spyder-kernel <<'K'
 #!/bin/bash
 # usage: spyder-kernel [sci|sci-spyder5|sci-legacy]   (default sci)

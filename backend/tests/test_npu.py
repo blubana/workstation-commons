@@ -65,3 +65,43 @@ def test_wait_timeout_releases_cleanly(monkeypatch):
         assert s.active is None
 
     run(main())
+
+
+@pytest.mark.parametrize("granted", [False, True], ids=["before-grant", "after-grant"])
+def test_cancel_acquire(granted):
+    async def main():
+        s = npu.Scheduler()
+        await s.acquire("alice", {})
+        bob = asyncio.create_task(s.acquire("bob", {}))
+        carol = asyncio.create_task(s.acquire("carol", {}))
+        await asyncio.sleep(0)
+        if granted:
+            s.release(True)
+            assert s.active["user"] == "bob"
+        bob.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await bob
+        assert "bob" not in s.queued()
+        if not granted:
+            assert s.active["user"] == "alice"
+            s.release(True)
+        await asyncio.wait_for(carol, 1)
+        assert s.active["user"] == "carol"
+        s.release(True)
+
+    run(main())
+
+
+def test_gateway_reloads_missing_token_and_rejects_unsafe_mode(tmp_path, monkeypatch, caplog):
+    key = tmp_path / "worker-token"
+    monkeypatch.setattr(npu, "KEY_FILE", key)
+    gateway = npu.Gateway()
+    with pytest.raises(npu.MissingToken):
+        gateway.headers()
+    key.write_text("x" * 32)
+    key.chmod(0o640)
+    assert gateway.headers() == {"Authorization": "Bearer " + "x" * 32}
+    key.chmod(0o644)
+    with pytest.raises(npu.MissingToken):
+        gateway.headers()
+    assert "unsafe permissions" in caplog.text

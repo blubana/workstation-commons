@@ -1,4 +1,6 @@
 __pycache__/
-.venv/
+node_modules/
 target/
-*.pyc
+dist/
+*.db
+__pycache__/

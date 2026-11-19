@@ -13,12 +13,18 @@ import time
 
 import httpx
 
+from .credentials import safe_mode
+
 WORKER_URL = os.getenv("CM_NPU_URL", "http://127.0.0.1:8102")
 KEY_FILE = os.getenv("CM_NPU_TOKEN_FILE", "/etc/compute-mgr/npu.token")
-MAX_BODY = 1 << 30
+MAX_BODY = int(os.getenv("CM_NPU_MAX_BODY", str(256 << 20)))
 MAX_QUEUED_PER_USER = int(os.getenv("CM_NPU_MAX_QUEUED", "4"))
 WAIT_TIMEOUT = float(os.getenv("CM_NPU_WAIT_TIMEOUT", "300"))
 RUN_TIMEOUT = float(os.getenv("CM_NPU_RUN_TIMEOUT", "600"))
+
+
+class MissingToken(Exception):
+    pass
 
 
 class QueueFull(Exception):
@@ -69,14 +75,17 @@ class Scheduler:
         q.append(entry)
         self._grant_next()
         try:
-            await asyncio.wait_for(asyncio.shield(fut), WAIT_TIMEOUT)
-        except asyncio.TimeoutError:
-            if entry in q:
+            async with asyncio.timeout(WAIT_TIMEOUT):
+                await asyncio.shield(fut)
+        except (TimeoutError, asyncio.CancelledError) as exc:
+            if fut.done():
+                self.release(False)
+            else:
                 q.remove(entry)
-            if fut.done():          # granted at the last moment: give the slot back
-                self.active = None
-                self._grant_next()
-            raise WaitTimeout()
+                fut.cancel()
+            if isinstance(exc, TimeoutError):
+                raise WaitTimeout() from exc
+            raise
 
     def release(self, ok):
         if self.active:
@@ -93,12 +102,15 @@ class Gateway:
         self._key = None
 
     def key(self):
-        if self._key is None:
-            try:
-                with open(KEY_FILE) as f:
-                    self._key = f.read().strip()
-            except OSError:
-                self._key = ""
+        try:
+            with open(KEY_FILE) as f:
+                if safe_mode(KEY_FILE, os.fstat(f.fileno()).st_mode):
+                    if not self._key:
+                        self._key = f.read().strip()
+                    return self._key
+        except OSError:
+            pass
+        self._key = ""
         return self._key
 
     async def start(self):
@@ -109,7 +121,10 @@ class Gateway:
             await self.client.aclose()
 
     def headers(self):
-        return {"Authorization": f"Bearer {self.key()}"} if self.key() else {}
+        key = self.key()
+        if not key:
+            raise MissingToken()
+        return {"Authorization": f"Bearer {key}"}
 
     async def status(self):
         worker = None
@@ -117,7 +132,7 @@ class Gateway:
             r = await self.client.get("/status", headers=self.headers(), timeout=5)
             if r.status_code == 200:
                 worker = r.json()
-        except (httpx.HTTPError, ValueError):
+        except (httpx.HTTPError, ValueError, MissingToken):
             pass
         npu = (worker or {}).get("devices", {}).get("NPU")
         lat = list(self.sched.latency)

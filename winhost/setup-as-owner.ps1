@@ -13,10 +13,12 @@ if (-not ((wsl.exe -l -q) -replace "`0",'' | Where-Object { $_ -eq 'compute' }))
   wsl.exe --import-in-place compute C:\wsl\compute\ext4.vhdx
 }
 $p  = New-ScheduledTaskPrincipal -UserId $me -LogonType S4U -RunLevel Highest
+$workerPrincipal = New-ScheduledTaskPrincipal -UserId $me -LogonType S4U -RunLevel Limited
 $rs = New-ScheduledTaskSettingsSet -ExecutionTimeLimit 0 -RestartCount 99 -RestartInterval (New-TimeSpan -Minutes 1) -AllowStartIfOnBatteries
 $t  = New-ScheduledTaskTrigger -AtStartup
 Register-ScheduledTask cm-compute-autostart -Action (New-ScheduledTaskAction -Execute 'wsl.exe' -Argument '-d compute -u root -- sleep infinity') -Trigger $t -Principal $p -Settings $rs -Force | Out-Null
-Register-ScheduledTask cm-npu-worker -Action (New-ScheduledTaskAction -Execute 'C:\cm-npu\venv\Scripts\python.exe' -Argument '"C:\cm-npu\cm_npu_worker.py"' -WorkingDirectory 'C:\cm-npu') -Trigger $t -Principal $p -Settings $rs -Force | Out-Null
+Get-ScheduledTask -TaskName 'cm-npu-worker' -ErrorAction SilentlyContinue | Stop-ScheduledTask
+Register-ScheduledTask cm-npu-worker -Action (New-ScheduledTaskAction -Execute 'C:\cm-npu\venv\Scripts\python.exe' -Argument '"C:\cm-npu\cm_npu_worker.py"' -WorkingDirectory 'C:\cm-npu') -Trigger $t -Principal $workerPrincipal -Settings $rs -Force | Out-Null
 Register-ScheduledTask cm-wsl-restart -Action (New-ScheduledTaskAction -Execute 'powershell.exe' -Argument '-NoProfile -Command "Start-Sleep 5; wsl.exe --shutdown"') -Principal $p -Force | Out-Null
 Start-ScheduledTask cm-compute-autostart; Start-ScheduledTask cm-npu-worker
 Start-Sleep 15

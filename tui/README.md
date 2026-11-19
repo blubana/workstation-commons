@@ -7,7 +7,7 @@ Terminal management for compute-mgr. The daemon identifies the caller by Unix so
 ```sh
 cd tui
 cargo test
-cargo build --release
+cargo build --release --locked
 ./target/release/cm-top
 CM_SOCK=/path/to/api.sock ./target/release/cm-top
 ```
@@ -56,3 +56,10 @@ Users, Policy, and Audit are admin-only. Regular users see their own kernels and
 ```
 
 The fixtures directory contains snapshots, environment and audit rows, policy, a username-to-key-list map in `users-keys.json`, and history for all six metrics. User history fixtures map usernames to histories. Mock mutations update the running session’s users, kernels, keys, policy, and audit as appropriate. Restarting reloads the fixtures from disk.
+
+### Dependency security
+
+The current lockfile resolves Ratatui 0.29 with `lru` 0.12.5 and `paste` 1.0.15.
+Ratatui 0.30.2 is an upgrade candidate with a newer `lru` and no `paste` in its
+published lockfile. The upgrade could not be resolved in the offline build
+environment because the Cargo cache lacks `ratatui-core`.

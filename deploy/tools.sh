@@ -1,13 +1,13 @@
 set -e
 cat > /usr/local/sbin/compute-adduser <<'A'
 #!/bin/bash
-# usage: compute-adduser <name> "<ssh-pubkey>"
-set -e; U=$1; K=$2; [ -n "$U" ] && [ -n "$K" ] || { echo "usage: $0 name 'ssh-ed25519 ...'"; exit 1; }
-id "$U" &>/dev/null || useradd -m -s /bin/bash -G compute "$U"
-install -d -m700 -o "$U" -g "$U" /home/$U/.ssh /home/$U/data
-echo "$K" >> /home/$U/.ssh/authorized_keys; chown "$U:$U" /home/$U/.ssh/authorized_keys; chmod 600 /home/$U/.ssh/authorized_keys
-loginctl enable-linger "$U"   # kernels survive logout
-echo "added $U"
+# usage: sudo compute-adduser <name> "<ssh-pubkey>"
+# Thin wrapper around the hardened helper (validation, as-user home writes, audit log).
+set -euo pipefail
+[ $# -eq 2 ] || { echo "usage: $0 name 'ssh-ed25519 ...'" >&2; exit 1; }
+[ "$(id -u)" -eq 0 ] || { echo "run with sudo" >&2; exit 1; }
+args=$(python3 -I -c 'import json,sys; print(json.dumps({"user": sys.argv[1], "pubkey": sys.argv[2], "actor": sys.argv[3]}))' "$1" "$2" "${SUDO_USER:-root}")
+SUDO_USER=root exec /usr/local/libexec/compute-mgr-helper user-add "$args"
 A
 chmod 750 /usr/local/sbin/compute-adduser
 # per-user summary panel
@@ -35,4 +35,4 @@ exec tmux attach -t dash
 T
 chmod 755 /usr/local/bin/compute-dash
 apt-get install -y -qq bc >/dev/null
-compute-adduser demo "$(cat /home/admin/.ssh/authorized_keys)"
+# example: compute-adduser demo "$(cat /path/to/demo.pub)"

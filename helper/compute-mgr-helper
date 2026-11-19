@@ -36,6 +36,8 @@ COMPUTE_GROUP = "compute"
 WIN_ADMIN = ["ssh", "-o", "BatchMode=yes", "-o", "UserKnownHostsFile=/etc/compute-mgr/known_hosts",
              "-o", "StrictHostKeyChecking=yes", "-o", "ConnectTimeout=5", "-i", "/etc/compute-mgr/win-admin",
              SITE.get("CM_WIN_TARGET", "Administrator@127.0.0.1")]
+PRIV_GROUPS = {"sudo", "adm", "wheel", "root", "admin"}   # never managed by this helper
+REGISTRY = "/var/lib/compute-mgr-helper/managed.json"     # accounts this helper created/manages
 KERNEL_MARKERS = ("ipykernel_launcher", "spyder_kernels.console", "ipykernel")
 
 
@@ -55,11 +57,86 @@ def run(argv):
     return r.stdout
 
 
-def audit(actor, action, target, ok, detail=""):
-    os.makedirs(os.path.dirname(AUDIT), exist_ok=True)
-    with open(AUDIT, "a") as f:
-        f.write(json.dumps({"time": time.time(), "actor": actor, "action": action,
-                            "target": target, "ok": ok, "detail": detail[:300]}) + "\n")
+def audit(actor, action, target, ok, detail="", phase="result"):
+    """Root-owned append-only log; the daemon may read it (0640 root:computemgr).
+    `actor` is asserted by the daemon; `via` records who actually invoked sudo (H4)."""
+    os.makedirs(os.path.dirname(AUDIT), mode=0o750, exist_ok=True)
+    fd = os.open(AUDIT, os.O_WRONLY | os.O_APPEND | os.O_CREAT | os.O_NOFOLLOW, 0o640)
+    try:
+        st = os.fstat(fd)
+        gid = grp.getgrnam("computemgr").gr_gid
+        if (st.st_uid, st.st_gid, st.st_mode & 0o777) != (0, gid, 0o640):
+            os.fchown(fd, 0, gid)
+            os.fchmod(fd, 0o640)
+        line = json.dumps({"time": time.time(), "actor": actor, "via": os.environ.get("SUDO_USER"),
+                           "action": action, "target": target, "phase": phase, "ok": ok,
+                           "detail": detail[:300]}) + "\n"
+        os.write(fd, line.encode())
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+
+
+# ---------- managed-account registry ----------
+def managed():
+    try:
+        with open(REGISTRY) as f:
+            return set(json.load(f))
+    except (OSError, ValueError):
+        return set()
+
+
+def set_managed(names):
+    os.makedirs(os.path.dirname(REGISTRY), mode=0o700, exist_ok=True)
+    tmp = REGISTRY + ".tmp"
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW, 0o600)
+    with os.fdopen(fd, "w") as f:
+        json.dump(sorted(names), f)
+    os.replace(tmp, REGISTRY)
+
+
+def groups_of(pw):
+    names = {g.gr_name for g in grp.getgrall() if pw.pw_name in g.gr_mem}
+    try:
+        names.add(grp.getgrgid(pw.pw_gid).gr_name)
+    except KeyError:
+        pass
+    return names
+
+
+# ---------- run file operations inside a user's home AS that user ----------
+def as_user(pw, fn, *args):
+    """Fork, drop to the target uid/gid, run fn. Symlinks planted by the user then
+    resolve with the user's own permissions, so root never follows them (H1)."""
+    r, w = os.pipe()
+    pid = os.fork()
+    if pid == 0:
+        os.close(r)
+        try:
+            os.setgroups([])
+            os.setgid(pw.pw_gid)
+            os.setuid(pw.pw_uid)
+            os.umask(0o077)
+            os.chdir(pw.pw_dir)
+            res = {"ok": fn(pw, *args)}
+        except Bad as e:
+            res = {"bad": str(e)}
+        except Exception as e:
+            res = {"err": f"{e.__class__.__name__}: {e}"[:300]}
+        os.write(w, json.dumps(res).encode())
+        os._exit(0)
+    os.close(w)
+    data = b""
+    while chunk := os.read(r, 65536):
+        data += chunk
+    os.close(r)
+    os.waitpid(pid, 0)
+    res = json.loads(data or b'{"err":"child died"}')
+    if "bad" in res:
+        raise Bad(res["bad"])
+    if "err" in res:
+        raise RuntimeError(res["err"])
+    return res["ok"]
 
 
 # ---------- validators ----------
@@ -76,6 +153,8 @@ def v_user(name, must_exist=False, compute_member=False):
         return None
     if pw.pw_uid < 1000:
         raise Bad("system account")
+    if groups_of(pw) & PRIV_GROUPS:
+        raise Bad("account has OS admin rights; manage it outside compute-mgr")
     if compute_member and name not in grp.getgrnam(COMPUTE_GROUP).gr_mem:
         raise Bad("not a compute user")
     return pw
@@ -120,47 +199,55 @@ def key_fp(line):
     return "SHA256:" + base64.b64encode(hashlib.sha256(blob).digest()).decode().rstrip("=")
 
 
-def auth_keys_path(pw):
-    return os.path.join(pw.pw_dir, ".ssh", "authorized_keys")
-
-
-def write_keys(pw, lines):
-    sshdir = os.path.join(pw.pw_dir, ".ssh")
-    os.makedirs(sshdir, mode=0o700, exist_ok=True)
-    # refuse symlinks to avoid writing outside home
-    for p in (sshdir, auth_keys_path(pw)):
-        if os.path.islink(p):
-            raise Bad("symlink in .ssh refused")
-    tmp = auth_keys_path(pw) + ".cm-tmp"
+def _write_keys_u(pw, lines):
+    os.makedirs(".ssh", mode=0o700, exist_ok=True)
+    if os.path.islink(".ssh") or not os.path.isdir(".ssh"):
+        raise Bad("~/.ssh is not a directory")
+    os.chmod(".ssh", 0o700)
+    tmp = ".ssh/authorized_keys.cm-tmp"
     fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW, 0o600)
     with os.fdopen(fd, "w") as f:
         f.write("".join(l.rstrip("\n") + "\n" for l in lines))
-    os.chown(tmp, pw.pw_uid, pw.pw_gid)
-    os.chown(sshdir, pw.pw_uid, pw.pw_gid)
-    os.rename(tmp, auth_keys_path(pw))
+    os.replace(tmp, ".ssh/authorized_keys")
+    return True
 
 
-def read_keys(pw):
-    p = auth_keys_path(pw)
-    if os.path.islink(p) or not os.path.exists(p):
+def _read_keys_u(pw):
+    p = ".ssh/authorized_keys"
+    if os.path.islink(p) or not os.path.isfile(p):
         return []
     with open(p) as f:
         return [l.rstrip("\n") for l in f if l.strip() and not l.startswith("#")]
+
+
+def _make_data_u(pw):
+    os.makedirs("data", mode=0o700, exist_ok=True)
+    return True
+
+
+def write_keys(pw, lines):
+    return as_user(pw, _write_keys_u, lines)
+
+
+def read_keys(pw):
+    return as_user(pw, _read_keys_u)
 
 
 # ---------- ops ----------
 def op_user_add(a):
     pw = v_user(a.get("user"))
     line, fp = v_pubkey(a.get("pubkey"))
+    reg = managed()
     if pw is None:
         run(["useradd", "-m", "-s", "/bin/bash", "-G", COMPUTE_GROUP, a["user"]])
         pw = pwd.getpwnam(a["user"])
-    else:
-        run(["usermod", "-aG", COMPUTE_GROUP, "-U", a["user"]])  # also unlock if disabled
+        set_managed(reg | {a["user"]})
+    elif a["user"] in reg:
+        run(["usermod", "-aG", COMPUTE_GROUP, "-U", a["user"]])  # re-enable a previously disabled account
         run(["chage", "-E", "-1", a["user"]])
-    data = os.path.join(pw.pw_dir, "data")
-    os.makedirs(data, mode=0o700, exist_ok=True)
-    os.chown(data, pw.pw_uid, pw.pw_gid)
+    else:
+        raise Bad("account exists but is not managed by compute-mgr")
+    as_user(pw, _make_data_u)
     keys = read_keys(pw)
     if fp not in {key_fp(k) for k in keys}:
         keys.append(line)
@@ -172,11 +259,24 @@ def op_user_add(a):
 def op_user_disable(a):
     pw = v_user(a.get("user"), must_exist=True, compute_member=True)
     run(["usermod", "-L", a["user"]])
-    run(["gpasswd", "-d", a["user"], COMPUTE_GROUP])  # revokes web/TUI role immediately
     run(["chage", "-E", "0", a["user"]])
-    subprocess.run(["loginctl", "disable-linger", a["user"]], capture_output=True)
-    subprocess.run(["loginctl", "terminate-user", a["user"]], capture_output=True)
-    subprocess.run(["pkill", "-KILL", "-u", str(pw.pw_uid)], capture_output=True)
+    run(["gpasswd", "-d", a["user"], COMPUTE_GROUP])          # revokes the user role
+    if a["user"] in grp.getgrnam(ADMIN_GROUP).gr_mem:
+        run(["gpasswd", "-d", a["user"], ADMIN_GROUP])        # and the admin role (H3)
+    problems = []
+    for argv in (["loginctl", "disable-linger", a["user"]], ["loginctl", "terminate-user", a["user"]]):
+        r = subprocess.run(argv, capture_output=True, text=True, env={"PATH": "/usr/sbin:/usr/bin:/sbin:/bin"})
+        if r.returncode != 0 and "not logged in" not in r.stderr and "No such" not in r.stderr:
+            problems.append(f"{argv[1]}: {r.stderr.strip()[:80]}")
+    subprocess.run(["pkill", "-KILL", "-u", str(pw.pw_uid)], capture_output=True, env={"PATH": "/usr/bin:/bin"})
+    time.sleep(0.5)
+    if subprocess.run(["pgrep", "-u", str(pw.pw_uid)], capture_output=True, env={"PATH": "/usr/bin:/bin"}).returncode == 0:
+        problems.append("processes still running")
+    left = groups_of(pwd.getpwnam(a["user"])) & {COMPUTE_GROUP, ADMIN_GROUP}
+    if left:
+        problems.append(f"still in {sorted(left)}")
+    if problems:
+        raise RuntimeError("disable incomplete: " + "; ".join(problems))
     return {"user": a["user"], "disabled": True}
 
 
@@ -188,8 +288,12 @@ def op_user_role(a):
     if admin:
         run(["gpasswd", "-a", a["user"], ADMIN_GROUP])
     else:
-        subprocess.run(["gpasswd", "-d", a["user"], ADMIN_GROUP], capture_output=True)  # ok if not a member
-    return {"user": a["user"], "role": "admin" if admin else "user"}
+        if a["user"] in grp.getgrnam(ADMIN_GROUP).gr_mem:
+            run(["gpasswd", "-d", a["user"], ADMIN_GROUP])
+    is_admin = a["user"] in grp.getgrnam(ADMIN_GROUP).gr_mem
+    if is_admin != admin:
+        raise RuntimeError("role change did not take effect")
+    return {"user": a["user"], "role": "admin" if is_admin else "user"}
 
 
 def op_key_add(a):
@@ -335,6 +439,11 @@ def main():
     except (Bad, ValueError, KeyError) as e:
         out({"error": "validation", "detail": str(e)}, 2)
     target = str(a.get("user") or a.get("owner") or a.get("pid") or {"wslconfig-set": "wslconfig", "wsl-restart": "wsl"}.get(op, "policy"))
+    if op not in READ_ONLY:
+        try:
+            audit(actor, op, target, None, phase="attempt")   # no mutation without a log record
+        except OSError as e:
+            out({"error": "failed", "detail": f"audit log unavailable: {e}"}, 3)
     try:
         res = OPS[op](a)
     except Bad as e:

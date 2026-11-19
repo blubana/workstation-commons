@@ -61,14 +61,14 @@ Do not change shapes without updating this file.
 ### GET /api/v1/history?metric=<m>&user=<u>&since=<epoch>&step=<s>
 Metrics include `cpu_percent`, `mem_used`, `gpu_mem_used`, `gpu_util`, `user_mem`, `user_cpu`, `net_rx`, `net_tx`, `disk_read`, `disk_write`, and `gpu_temp`.
 Network and disk metrics sum the available interface and device rates in bytes per second. `gpu_temp` averages available GPU temperatures in degrees Celsius.
-→ `{"metric":"user_mem","user":"alice","points":[[t,v],...]}` (v may be null). Retention 30 days in SQLite WAL, 10 s sample.
+→ `{"metric":"user_mem","user":"alice","points":[[t,v],...]}` (v may be null). Retention is 30 days in SQLite WAL, sampled every 10 s. The minimum requested step is 2 s. The server increases it as needed to return at most 2,000 buckets.
 
 ### GET /api/v1/stream   (SSE)
-Events every 2 s: `event: system` (data = /system body), `event: users` (data = /users body), `event: kernels`.
+Events every 2 s: `event: system` (data = /system body), `event: users` (data = /users body), `event: kernels`. Each UID can open up to four streams. Additional streams receive 429.
 
 ### Admin-only (all executed through helper, see docs/HELPER.md)
 - `POST /api/v1/users {"user":"bob","pubkey":"ssh-ed25519 ..."}` → helper `user-add`
-- `DELETE /api/v1/users/{user}` → helper `user-disable` (locks account, kills sessions, keeps home)
+- `DELETE /api/v1/users/{user}` → helper `user-disable` (locks account, kills sessions, keeps home). Helper failures are returned with an error status and detail.
 - `POST /api/v1/users/{user}/keys {"pubkey":"..."}` → helper `key-add`
 - `DELETE /api/v1/users/{user}/keys/{fingerprint}` → helper `key-remove`
 - `GET /api/v1/users/{user}/keys` → `[{"fingerprint":"SHA256:...","type":"ssh-ed25519","comment":"bob@pc"}]`
@@ -83,6 +83,6 @@ Events every 2 s: `event: system` (data = /system body), `event: users` (data = 
 
 ## v1.2 additions
 - `PUT /api/v1/users/{user}/role` (admin) body `{"role":"admin"|"user"}` → helper `user-role`; admin = member of group `computeadmin`. Takes effect on the user's next request (role is resolved per request).
-- `GET /api/v1/npu/status` (any role) → `{up, npu:{name,npu_driver_version,...}, devices, openvino, cached_models, active, queued:{user:n}, served, errors, avg_latency_s}`.
-- `POST /api/v1/npu/run` (any role) body `.npz` (`__xml__`, `__bin__` uint8 OpenVINO IR, optional `__device__` NPU|CPU|GPU.0, inputs by name) → `.npz` outputs + `__timing__`. One job at a time, round-robin across users, max 4 queued per user (429), 300 s queue wait (503).
+- `GET /api/v1/npu/status` (any role) → `{up, npu:{name,npu_driver_version,...}, devices, openvino, cached_models, active, queued:{user:n}, served, errors, avg_latency_s}`. Non-admins receive `active: null` or `active: {user:"you"|"other"}` and `queued: {you:n, others:n}`.
+- `POST /api/v1/npu/run` (any role) body `.npz` (`__xml__`, `__bin__` uint8 OpenVINO IR, optional `__device__` NPU|CPU|GPU.0, inputs by name) → `.npz` outputs + `__timing__`. One job at a time, round-robin across users, max 4 queued per user (429), 300 s queue wait (503). Uploads over `CM_NPU_MAX_BODY` (256 MiB by default) receive 413.
 - Windows facts come from a forced-command SSH key (`/etc/compute-mgr/win-info`) instead of WSL interop; `.wslconfig` edits / WSL restart via a second key held by root (`win-admin`).

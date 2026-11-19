@@ -1,0 +1,5 @@
+# CPython 3.12, Windows x86-64. Hashes are for the published PyPI wheels.
+numpy==2.2.6 --hash=sha256:c1f9540be57940698ed329904db803cf7a402f3fc200bfe599334c9bd84a40b2
+openvino==2025.4.1 --hash=sha256:c50293d1463698012eaa526dcc83f841b85a3f4952eea4c9445c83e0346f8e80
+openvino-telemetry==2025.2.0 --hash=sha256:bcb667e83a44f202ecf4cfa49281715c6d7e21499daec04ff853b7f964833599
+packaging==26.2 --hash=sha256:5fc45236b9446107ff2415ce77c807cee2862cb6fac22b8a73826d0693b0980e

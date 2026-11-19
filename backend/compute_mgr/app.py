@@ -6,14 +6,17 @@ import threading
 import time
 from contextlib import asynccontextmanager
 from dataclasses import asdict
+from io import BytesIO
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, StreamingResponse
+import anyio
 import httpx
 from pydantic import BaseModel, StrictInt
 from starlette.concurrency import run_in_threadpool
+from starlette.requests import ClientDisconnect
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from . import helper, host, identity, npu, winhost
@@ -64,6 +67,7 @@ def create_app(*, collector=None, history=None, resolve_uid=identity.resolve_uid
     snapshot_lock = threading.Lock()
     snapshot = None
     last_snapshot = float("-inf")
+    stream_counts = {}
     key_counts = {}
     key_lock = threading.Lock()
 
@@ -167,7 +171,7 @@ def create_app(*, collector=None, history=None, resolve_uid=identity.resolve_uid
     @app.get("/api/v1/history")
     def metrics(metric: str, actor: Principal, user: str | None = None,
                 since: Annotated[float | None, Query(ge=0, allow_inf_nan=False)] = None,
-                step: Annotated[float, Query(gt=0, allow_inf_nan=False)] = INTERVAL):
+                step: Annotated[float, Query(ge=2, allow_inf_nan=False)] = INTERVAL):
         if metric in USER_METRICS:
             user = user if user is not None else actor.user
             if not user:
@@ -180,19 +184,34 @@ def create_app(*, collector=None, history=None, resolve_uid=identity.resolve_uid
         return {"metric": metric, "user": user, "points": history.points(metric, user, since, step)}
 
     @app.get("/api/v1/stream")
-    async def stream(actor: Principal, request: Request):
+    async def stream(actor: Principal):
         def payloads():
             system, users, kernels = collect()
             return (("system", system), ("users", users_for(users, actor)), ("kernels", scoped(kernels, actor)))
 
         async def events():
-            while not await request.is_disconnected():
+            while True:
                 started = time.monotonic()
                 for name, data in await run_in_threadpool(payloads):
                     yield f"event: {name}\ndata: {json.dumps(data)}\n\n"
                 await asyncio.sleep(max(0, 2 - (time.monotonic() - started)))
 
-        return StreamingResponse(events(), media_type="text/event-stream",
+        class LimitedStream(StreamingResponse):
+            async def __call__(self, scope, receive, send):
+                count = stream_counts.get(actor.uid, 0)
+                if count >= 4:
+                    response = JSONResponse({"error": "failed", "detail": "Too many streams"}, status_code=429)
+                    await response(scope, receive, send)
+                    return
+                stream_counts[actor.uid] = count + 1
+                try:
+                    await super().__call__(scope, receive, send)
+                finally:
+                    stream_counts[actor.uid] -= 1
+                    if stream_counts[actor.uid] == 0:
+                        del stream_counts[actor.uid]
+
+        return LimitedStream(events(), media_type="text/event-stream",
                                  headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
     @app.post("/api/v1/users")
@@ -248,26 +267,62 @@ def create_app(*, collector=None, history=None, resolve_uid=identity.resolve_uid
 
     @app.get("/api/v1/npu/status")
     async def npu_status(actor: Principal):
-        return await gateway.status()
+        status = await gateway.status()
+        if actor.role != "admin":
+            if active := status["active"]:
+                status["active"] = {"user": "you" if active["user"] == actor.user else "other"}
+            queued = status["queued"]
+            own = queued.get(actor.user, 0)
+            status["queued"] = {"you": own, "others": sum(queued.values()) - own}
+        return status
 
     @app.post("/api/v1/npu/run")
     async def npu_run(request: Request, actor: Principal):
-        length = int(request.headers.get("content-length") or 0)
-        if not 0 < length <= npu.MAX_BODY:
-            raise HTTPException(413, f"Body must be 1 B .. {npu.MAX_BODY >> 20} MiB")
-        body = await request.body()
         try:
-            await gateway.sched.acquire(actor.user, {"endpoint": "run", "bytes": len(body)})
+            await gateway.sched.acquire(actor.user, {"endpoint": "run"})
         except npu.QueueFull:
             raise HTTPException(429, f"You already have {npu.MAX_QUEUED_PER_USER} NPU jobs queued")
         except npu.WaitTimeout:
             raise HTTPException(503, "NPU busy: waited too long in the queue")
         ok = False
         try:
-            r = await gateway.run(body)
+            with BytesIO() as upload:
+                async for chunk in request.stream():
+                    if upload.tell() + len(chunk) > npu.MAX_BODY:
+                        raise HTTPException(413, f"Body exceeds {npu.MAX_BODY} bytes")
+                    upload.write(chunk)
+                body = upload.getvalue()
+            if not body:
+                raise HTTPException(413, "Body must not be empty")
+            gateway.sched.active["bytes"] = len(body)
+
+            disconnected = False
+            async with anyio.create_task_group() as tasks:
+                async def watch_disconnect():
+                    nonlocal disconnected
+                    while (await request.receive())["type"] != "http.disconnect":
+                        pass
+                    disconnected = True
+                    tasks.cancel_scope.cancel()
+
+                tasks.start_soon(watch_disconnect)
+                try:
+                    r = await gateway.run(body)
+                except anyio.get_cancelled_exc_class():
+                    raise
+                except (httpx.HTTPError, npu.MissingToken) as exc:
+                    worker_error = exc
+                else:
+                    worker_error = None
+                finally:
+                    tasks.cancel_scope.cancel()
+            if disconnected:
+                raise ClientDisconnect()
+            if worker_error is not None:
+                raise HTTPException(502, f"NPU worker unavailable: {type(worker_error).__name__}")
             ok = r.status_code == 200
-        except httpx.HTTPError as exc:
-            raise HTTPException(502, f"NPU worker unavailable: {exc.__class__.__name__}")
+        except ClientDisconnect:
+            return Response(status_code=499)
         finally:
             gateway.sched.release(ok)
         if r.status_code != 200:
