@@ -154,7 +154,54 @@ print(list(out.values())[0].shape, cm_npu.last_timing)
 - 查看佇列：`cm_npu.status()`。每人最多排 4 個工作；請求大小上限 256 MB。
 - 一般的 numpy 運算請直接用 CPU 或 GPU；NPU 只在上述情況才划算。
 
-## 8. 常見問題
+## 8. 實際運算：工作流程與範例
+
+連上 Spyder 後，F5（整個檔案）或 F9（選取的行）都在伺服器執行；檔案路徑是伺服器上的路徑（`os.getcwd()` 通常是 `/home/<帳號>`）。
+
+**確認已連上伺服器**
+```python
+import socket, getpass, sys
+print(socket.gethostname(), getpass.getuser(), sys.executable)   # SERVER <帳號> /opt/conda/envs/...
+```
+
+**傳資料**（在自己電腦的終端機）
+```bash
+scp -P 2200 mydata.csv <帳號>@192.168.1.10:~/data/
+scp -P 2200 <帳號>@192.168.1.10:~/data/result.csv .
+rsync -av -e "ssh -p 2200" ./project/ <帳號>@192.168.1.10:~/project/
+```
+
+**選硬體**
+
+| 工作 | 用什麼 |
+|---|---|
+| pandas、一般 numpy、統計 | CPU |
+| 可拆開平行（參數掃描、重複模擬） | 多核 CPU：`joblib.Parallel(n_jobs=20)` |
+| 大矩陣、深度學習、大量 FFT | GPU：cupy / PyTorch `device="cuda"` |
+| 固定形狀模型重複推論 | NPU（§7） |
+
+```python
+from joblib import Parallel, delayed
+import numpy as np
+def simulate(seed):
+    return np.random.default_rng(seed).normal(size=1_000_000).mean()
+results = Parallel(n_jobs=20)(delayed(simulate)(s) for s in range(200))   # 留幾核給別人
+
+import cupy as cp
+a = cp.random.rand(10000, 10000)
+b = cp.asnumpy((a @ a.T)[:5, :5])    # GPU 算完拿回 numpy
+```
+
+**在 Spyder 裡下指令**：Spyder 沒有內建終端機，但在 IPython Console 用 `!` 開頭的指令會在伺服器執行，例如 `!nvidia-smi`、`!ls ~/data`、`%cd ~/project`。互動式程式（`cm-top`、`vim`）請另開終端機 `ssh compute`。
+
+**長時間工作**：關掉 Spyder 或電腦睡眠，kernel 仍在伺服器繼續算，重新連同一個 connection file 變數都還在。數小時以上的工作建議改用背景腳本：
+```bash
+ssh compute
+nohup /opt/conda/envs/sci/bin/python ~/project/run.py > ~/project/run.log 2>&1 &
+tail -f ~/project/run.log
+```
+
+## 9. 常見問題
 
 | 狀況 | 處理 |
 |---|---|
@@ -163,10 +210,11 @@ print(list(out.values())[0].shape, cm_npu.last_timing)
 | 程式被終止（Killed） | 記憶體壓力過大時被系統終止。減少資料量、分批處理，或請管理員調整策略。 |
 | `CUDA out of memory` | 其他人或你自己的舊 kernel 佔用 VRAM，用 `nvidia-smi` 查看，停止不用的 kernel。 |
 | NPU 回 `429` / `503` | 你排了太多工作，或排隊太久，稍後再試。 |
+| Spyder 顯示 `Permission denied for user ...` | Hostname 沒寫 `:2200`，連到了 Windows 的 SSH。改成 `<帳號>@<IP>:2200` |
 | Spyder 連不上 | 確認 kernel 還在跑（`cm-top` → Kernels），connection file 是最新的那個，Hostname 有帶 `:2200`。 |
 | 想知道伺服器狀態 | `cm-top`、`nvidia-smi`、`fastfetch`。 |
 
-## 9. 使用守則
+## 10. 使用守則
 
 - 不要把私鑰分享給別人，一人一個帳號。
 - 長時間大量使用 GPU 或記憶體前先告知其他人。
