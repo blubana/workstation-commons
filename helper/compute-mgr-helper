@@ -1,0 +1,353 @@
+#!/usr/bin/python3 -I
+"""compute-mgr privileged helper.
+
+Invoked ONLY as: sudo /usr/local/libexec/compute-mgr-helper <op> <json-args>
+by the unprivileged daemon user `computemgr` (see deploy/sudoers). Each op validates
+its arguments strictly; no shell is ever used. Prints one JSON object to stdout.
+Exit 0 = ok, 2 = validation error, 3 = operation failed.
+"""
+import json, os, pwd, grp, re, signal, subprocess, sys, time, base64, hashlib
+
+AUDIT = "/var/log/compute-mgr/audit.jsonl"
+POLICY_FILE = "/etc/systemd/system/user-.slice.d/50-limits.conf"
+TOTAL_FILE = "/etc/systemd/system/user.slice.d/50-total.conf"
+USER_RE = re.compile(r"^[a-z_][a-z0-9_-]{0,30}$")
+KEY_TYPES = {"ssh-ed25519", "ssh-rsa", "ecdsa-sha2-nistp256", "ecdsa-sha2-nistp384",
+             "ecdsa-sha2-nistp521", "sk-ssh-ed25519@openssh.com", "sk-ecdsa-sha2-nistp256@openssh.com"}
+ADMIN_GROUP = "computeadmin"
+def _site():
+    """/etc/compute-mgr/site.conf: KEY=VALUE lines (OWNER, CM_WIN_TARGET)."""
+    conf = {}
+    try:
+        with open("/etc/compute-mgr/site.conf") as f:
+            for line in f:
+                k, _, v = line.strip().partition("=")
+                if k and not k.startswith("#"):
+                    conf[k.strip()] = v.strip().strip('"')
+    except OSError:
+        pass
+    return conf
+
+
+SITE = _site()
+OWNERS = {u for u in SITE.get("OWNER", "").replace(",", " ").split() if u}
+PROTECTED = {"root", "computemgr"} | OWNERS
+COMPUTE_GROUP = "compute"
+WIN_ADMIN = ["ssh", "-o", "BatchMode=yes", "-o", "UserKnownHostsFile=/etc/compute-mgr/known_hosts",
+             "-o", "StrictHostKeyChecking=yes", "-o", "ConnectTimeout=5", "-i", "/etc/compute-mgr/win-admin",
+             SITE.get("CM_WIN_TARGET", "Administrator@127.0.0.1")]
+KERNEL_MARKERS = ("ipykernel_launcher", "spyder_kernels.console", "ipykernel")
+
+
+class Bad(Exception):
+    pass
+
+
+def out(obj, code=0):
+    sys.stdout.write(json.dumps(obj) + "\n")
+    sys.exit(code)
+
+
+def run(argv):
+    r = subprocess.run(argv, capture_output=True, text=True, timeout=60, env={"PATH": "/usr/sbin:/usr/bin:/sbin:/bin"})
+    if r.returncode != 0:
+        raise RuntimeError(f"{argv[0]} failed: {r.stderr.strip()[:300]}")
+    return r.stdout
+
+
+def audit(actor, action, target, ok, detail=""):
+    os.makedirs(os.path.dirname(AUDIT), exist_ok=True)
+    with open(AUDIT, "a") as f:
+        f.write(json.dumps({"time": time.time(), "actor": actor, "action": action,
+                            "target": target, "ok": ok, "detail": detail[:300]}) + "\n")
+
+
+# ---------- validators ----------
+def v_user(name, must_exist=False, compute_member=False):
+    if not isinstance(name, str) or not USER_RE.match(name):
+        raise Bad("invalid username")
+    if name in PROTECTED:
+        raise Bad("protected account")
+    try:
+        pw = pwd.getpwnam(name)
+    except KeyError:
+        if must_exist:
+            raise Bad("no such user")
+        return None
+    if pw.pw_uid < 1000:
+        raise Bad("system account")
+    if compute_member and name not in grp.getgrnam(COMPUTE_GROUP).gr_mem:
+        raise Bad("not a compute user")
+    return pw
+
+
+def v_actor(name):
+    if not isinstance(name, str) or not USER_RE.match(name):
+        raise Bad("invalid actor")
+    pwd.getpwnam(name)
+    return name
+
+
+def v_pubkey(key):
+    if not isinstance(key, str) or "\n" in key or "\r" in key or len(key) > 16384:
+        raise Bad("invalid key")
+    parts = key.strip().split()
+    if len(parts) < 2 or parts[0] not in KEY_TYPES:
+        raise Bad("unsupported key type")
+    try:
+        blob = base64.b64decode(parts[1], validate=True)
+    except Exception:
+        raise Bad("bad key base64")
+    # blob starts with length-prefixed key type
+    n = int.from_bytes(blob[:4], "big")
+    if blob[4:4 + n].decode(errors="replace") != parts[0]:
+        raise Bad("key type mismatch")
+    comment = " ".join(parts[2:])
+    if comment and not re.match(r"^[\w.@+:=-]{0,100}$", comment.replace(" ", "_")):
+        raise Bad("bad key comment")
+    fp = "SHA256:" + base64.b64encode(hashlib.sha256(blob).digest()).decode().rstrip("=")
+    return f"{parts[0]} {parts[1]}" + (f" {comment}" if comment else ""), fp
+
+
+def key_fp(line):
+    parts = line.split()
+    if len(parts) < 2:
+        return None
+    try:
+        blob = base64.b64decode(parts[1], validate=True)
+    except Exception:
+        return None
+    return "SHA256:" + base64.b64encode(hashlib.sha256(blob).digest()).decode().rstrip("=")
+
+
+def auth_keys_path(pw):
+    return os.path.join(pw.pw_dir, ".ssh", "authorized_keys")
+
+
+def write_keys(pw, lines):
+    sshdir = os.path.join(pw.pw_dir, ".ssh")
+    os.makedirs(sshdir, mode=0o700, exist_ok=True)
+    # refuse symlinks to avoid writing outside home
+    for p in (sshdir, auth_keys_path(pw)):
+        if os.path.islink(p):
+            raise Bad("symlink in .ssh refused")
+    tmp = auth_keys_path(pw) + ".cm-tmp"
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW, 0o600)
+    with os.fdopen(fd, "w") as f:
+        f.write("".join(l.rstrip("\n") + "\n" for l in lines))
+    os.chown(tmp, pw.pw_uid, pw.pw_gid)
+    os.chown(sshdir, pw.pw_uid, pw.pw_gid)
+    os.rename(tmp, auth_keys_path(pw))
+
+
+def read_keys(pw):
+    p = auth_keys_path(pw)
+    if os.path.islink(p) or not os.path.exists(p):
+        return []
+    with open(p) as f:
+        return [l.rstrip("\n") for l in f if l.strip() and not l.startswith("#")]
+
+
+# ---------- ops ----------
+def op_user_add(a):
+    pw = v_user(a.get("user"))
+    line, fp = v_pubkey(a.get("pubkey"))
+    if pw is None:
+        run(["useradd", "-m", "-s", "/bin/bash", "-G", COMPUTE_GROUP, a["user"]])
+        pw = pwd.getpwnam(a["user"])
+    else:
+        run(["usermod", "-aG", COMPUTE_GROUP, "-U", a["user"]])  # also unlock if disabled
+        run(["chage", "-E", "-1", a["user"]])
+    data = os.path.join(pw.pw_dir, "data")
+    os.makedirs(data, mode=0o700, exist_ok=True)
+    os.chown(data, pw.pw_uid, pw.pw_gid)
+    keys = read_keys(pw)
+    if fp not in {key_fp(k) for k in keys}:
+        keys.append(line)
+    write_keys(pw, keys)
+    run(["loginctl", "enable-linger", a["user"]])
+    return {"user": a["user"], "fingerprint": fp}
+
+
+def op_user_disable(a):
+    pw = v_user(a.get("user"), must_exist=True, compute_member=True)
+    run(["usermod", "-L", a["user"]])
+    run(["gpasswd", "-d", a["user"], COMPUTE_GROUP])  # revokes web/TUI role immediately
+    run(["chage", "-E", "0", a["user"]])
+    subprocess.run(["loginctl", "disable-linger", a["user"]], capture_output=True)
+    subprocess.run(["loginctl", "terminate-user", a["user"]], capture_output=True)
+    subprocess.run(["pkill", "-KILL", "-u", str(pw.pw_uid)], capture_output=True)
+    return {"user": a["user"], "disabled": True}
+
+
+def op_user_role(a):
+    v_user(a.get("user"), must_exist=True, compute_member=True)
+    admin = a.get("admin")
+    if not isinstance(admin, bool):
+        raise Bad("admin must be true or false")
+    if admin:
+        run(["gpasswd", "-a", a["user"], ADMIN_GROUP])
+    else:
+        subprocess.run(["gpasswd", "-d", a["user"], ADMIN_GROUP], capture_output=True)  # ok if not a member
+    return {"user": a["user"], "role": "admin" if admin else "user"}
+
+
+def op_key_add(a):
+    pw = v_user(a.get("user"), must_exist=True, compute_member=True)
+    line, fp = v_pubkey(a.get("pubkey"))
+    keys = read_keys(pw)
+    if fp not in {key_fp(k) for k in keys}:
+        keys.append(line)
+        write_keys(pw, keys)
+    return {"user": a["user"], "fingerprint": fp}
+
+
+def op_key_remove(a):
+    pw = v_user(a.get("user"), must_exist=True, compute_member=True)
+    fp = a.get("fingerprint")
+    if not isinstance(fp, str) or not re.match(r"^SHA256:[A-Za-z0-9+/]{43}$", fp):
+        raise Bad("invalid fingerprint")
+    keys = read_keys(pw)
+    new = [k for k in keys if key_fp(k) != fp]
+    if len(new) == len(keys):
+        raise Bad("key not found")
+    write_keys(pw, new)
+    return {"user": a["user"], "removed": fp}
+
+
+def op_key_list(a):
+    pw = v_user(a.get("user"), must_exist=True, compute_member=True)
+    res = []
+    for k in read_keys(pw):
+        p = k.split()
+        res.append({"fingerprint": key_fp(k), "type": p[0], "comment": " ".join(p[2:])})
+    return {"user": a["user"], "keys": res}
+
+
+def op_kernel_stop(a):
+    pid = a.get("pid")
+    owner = a.get("owner")
+    if not isinstance(pid, int) or pid <= 1:
+        raise Bad("invalid pid")
+    pw = v_user(owner, must_exist=True, compute_member=True)
+    try:
+        pidfd = os.pidfd_open(pid)
+    except ProcessLookupError:
+        raise Bad("no such process")
+    try:
+        # verify via /proc AFTER pinning the process with pidfd (no PID reuse race)
+        st = os.stat(f"/proc/{pid}")
+        if st.st_uid != pw.pw_uid:
+            raise Bad("process not owned by user")
+        with open(f"/proc/{pid}/cmdline", "rb") as f:
+            cmd = f.read().replace(b"\0", b" ").decode(errors="replace")
+        if not any(m in cmd for m in KERNEL_MARKERS):
+            raise Bad("not a kernel process")
+        signal.pidfd_send_signal(pidfd, signal.SIGTERM)
+        for _ in range(30):
+            try:
+                os.kill(pid, 0)
+            except ProcessLookupError:
+                break
+            time.sleep(0.1)
+        else:
+            signal.pidfd_send_signal(pidfd, signal.SIGKILL)
+    finally:
+        os.close(pidfd)
+    return {"pid": pid, "stopped": True}
+
+
+def op_policy_set(a):
+    def num(k, lo, hi):
+        v = a.get(k)
+        if not isinstance(v, int) or not lo <= v <= hi:
+            raise Bad(f"{k} must be int in [{lo},{hi}]")
+        return v
+    low = num("mem_low_gb", 0, 104)
+    high = num("mem_high_gb", 1, 110)
+    total = num("total_max_gb", 8, 110)
+    w = num("cpu_weight", 1, 10000)
+    if not low <= high <= total:
+        raise Bad("need mem_low <= mem_high <= total_max")
+    with open(POLICY_FILE, "w") as f:
+        f.write(f"[Slice]\nCPUWeight={w}\nMemoryLow={low}G\nMemoryHigh={high}G\nTasksMax=4096\n"
+                "ManagedOOMMemoryPressure=kill\nManagedOOMMemoryPressureLimit=60%\n")
+    with open(TOTAL_FILE, "w") as f:
+        f.write(f"[Slice]\nMemoryMax={total}G\nManagedOOMSwap=kill\n")
+    run(["systemctl", "daemon-reload"])
+    # apply live to running slices
+    run(["systemctl", "set-property", "--runtime", "user.slice", f"MemoryMax={total}G"])
+    for u in grp.getgrnam(COMPUTE_GROUP).gr_mem:
+        uid = pwd.getpwnam(u).pw_uid
+        if os.path.isdir(f"/sys/fs/cgroup/user.slice/user-{uid}.slice"):
+            run(["systemctl", "set-property", "--runtime", f"user-{uid}.slice",
+                 f"CPUWeight={w}", f"MemoryLow={low}G", f"MemoryHigh={high}G"])
+    return {"mem_low_gb": low, "mem_high_gb": high, "total_max_gb": total, "cpu_weight": w}
+
+
+def _win_admin(*words):
+    r = subprocess.run(WIN_ADMIN + [" ".join(words)], capture_output=True, text=True, timeout=60)
+    try:
+        body = json.loads(r.stdout.strip().splitlines()[-1])
+    except (ValueError, IndexError):
+        raise RuntimeError(f"windows admin script failed: {r.stderr.strip()[:200]}")
+    if body.get("error"):
+        raise Bad(body.get("detail", "rejected by windows"))
+    return body
+
+
+def op_wslconfig_set(a):
+    def num(k, lo, hi):
+        v = a.get(k)
+        if not isinstance(v, int) or isinstance(v, bool) or not lo <= v <= hi:
+            raise Bad(f"{k} must be int in [{lo},{hi}]")
+        return v
+    mem, procs, swap = num("memory_gb", 16, 124), num("processors", 2, 64), num("swap_gb", 0, 64)
+    body = _win_admin("wslconfig-set", str(mem), str(procs), str(swap))
+    body.pop("ok", None)
+    return body
+
+
+def op_wsl_restart(a):
+    body = _win_admin("wsl-restart")
+    body.pop("ok", None)
+    return body
+
+
+OPS = {"user-add": op_user_add, "user-role": op_user_role, "user-disable": op_user_disable, "key-add": op_key_add,
+       "key-remove": op_key_remove, "key-list": op_key_list, "kernel-stop": op_kernel_stop,
+       "policy-set": op_policy_set, "wslconfig-set": op_wslconfig_set, "wsl-restart": op_wsl_restart}
+READ_ONLY = {"key-list"}
+
+
+def main():
+    if len(sys.argv) != 3 or sys.argv[1] not in OPS:
+        out({"error": "usage", "ops": sorted(OPS)}, 2)
+    caller = os.environ.get("SUDO_USER")
+    if os.geteuid() != 0 or caller not in ("computemgr", "root"):
+        out({"error": "forbidden"}, 2)
+    op = sys.argv[1]
+    try:
+        a = json.loads(sys.argv[2])
+        if not isinstance(a, dict):
+            raise Bad("args must be object")
+        actor = v_actor(a.pop("actor", None))
+    except (Bad, ValueError, KeyError) as e:
+        out({"error": "validation", "detail": str(e)}, 2)
+    target = str(a.get("user") or a.get("owner") or a.get("pid") or {"wslconfig-set": "wslconfig", "wsl-restart": "wsl"}.get(op, "policy"))
+    try:
+        res = OPS[op](a)
+    except Bad as e:
+        if op not in READ_ONLY:
+            audit(actor, op, target, False, str(e))
+        out({"error": "validation", "detail": str(e)}, 2)
+    except Exception as e:
+        audit(actor, op, target, False, str(e))
+        out({"error": "failed", "detail": str(e)[:300]}, 3)
+    if op not in READ_ONLY:
+        audit(actor, op, target, True)
+    out({"ok": True, **res})
+
+
+if __name__ == "__main__":
+    main()

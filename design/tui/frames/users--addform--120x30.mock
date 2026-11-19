@@ -1,0 +1,46 @@
+#! tui-mockup 1
+#! size: 120x30
+#! caps: attrs=bold,dim,inverse colors=16 glyphs=unicode source=assumed
+#! title: cm-top - console Users
+#! state: normal
+#! theme: catppuccin-mocha
+#! note: alice, bob, carol and their numbers are INVENTED to show load; demo, system, GPU, hardware and WSL values are real
+#! note: caps assumed (mixed terminals, ANSI-16 following the terminal theme); no test-card screenshot yet
+#! region r1 header 0,0,120,1
+#! region r2 sidebar 0,1,16,27 Pages
+#! region r3 list 16,1,104,20 Users (4)
+#! region r4 detail 16,21,104,7 alice
+#! region r5 keybar 0,29,120,1
+#! region r6 modal 28,9,64,11 Add user
+#! focus r6
+#! selected r3 2
+{fg.faint}  cm-top SERVER  up 1h 03m                                                                   F1 console  oomd ✓  admin{/}
+{fg.faint}╭─ Pages ──────╮╭─ Users (4) ─────────────────────────────────────────────────────────────────────────────── sort mem ─╮{/}
+{fg.faint}│   1 Overview ││   USER        MEM   CPU KERN GPU KEYS LINGER                                                         │{/}
+{fg.faint}│   2 Users    ││   demo       0.0G    0%    0  ·     1 on                                                             │{/}
+{fg.faint}│   3 Kernels  ││ ❯ alice     41.2G  812%    2  ●     2 on                                                             │{/}
+{fg.faint}│   4 Policy   ││   bob       18.5G   96%    1  ·     1 on                                                             │{/}
+{fg.faint}│   5 Hardware ││   carol      2.1G    3%    1  ·     1 on                                                             │{/}
+{fg.faint}│   6 WSL      ││                                                                                                      │{/}
+{fg.faint}│   7 Envs     ││                                                                                                      │{/}
+{fg.faint}│   8 History  ││           {/}{border.focus on:bg.overlay}╭─ {/}{fg.title bold on:bg.overlay}Add user {/}{border.focus on:bg.overlay}───────────────────────────────────────────────────╮{/}{fg.faint}                           │{/}
+{fg.faint}│   9 Audit    ││           {/}{border.focus on:bg.overlay}│ {/}{fg.muted on:bg.overlay}Name    {/}{fg.default bold on:bg.overlay}eve{/}{fg.default inverse on:bg.overlay} {/}{border.focus on:bg.overlay}                                                 │{/}{fg.faint}                           │{/}
+{fg.faint}│              ││           {/}{border.focus on:bg.overlay}│         {/}{fg.faint on:bg.overlay}a-z 0-9 _ - , up to 31 chars                         {/}{border.focus on:bg.overlay}│{/}{fg.faint}                           │{/}
+{fg.faint}│              ││           {/}{border.focus on:bg.overlay}│                                                              │{/}{fg.faint}                           │{/}
+{fg.faint}│              ││           {/}{border.focus on:bg.overlay}│ {/}{fg.muted on:bg.overlay}SSH key {/}{fg.faint on:bg.overlay}paste a public key (ssh-ed25519 ...)                 {/}{border.focus on:bg.overlay}│{/}{fg.faint}                           │{/}
+{fg.faint}│              ││           {/}{border.focus on:bg.overlay}│                                                              │{/}{fg.faint}                           │{/}
+{fg.faint}│              ││           {/}{border.focus on:bg.overlay}│ {/}{fg.muted on:bg.overlay}Gets    16G guarantee, 80G soft cap, kernels survive logout  {/}{border.focus on:bg.overlay}│{/}{fg.faint}                           │{/}
+{fg.faint}│              ││           {/}{border.focus on:bg.overlay}│                                                              │{/}{fg.faint}                           │{/}
+{fg.faint}│              ││           {/}{border.focus on:bg.overlay}│                                                              │{/}{fg.faint}                           │{/}
+{fg.faint}│              ││           {/}{border.focus on:bg.overlay}│ {/}{keyhint.key bold on:bg.overlay}tab {/}{keyhint.desc on:bg.overlay}next field  {/}{keyhint.key bold on:bg.overlay}enter {/}{keyhint.desc on:bg.overlay}create  {/}{keyhint.key bold on:bg.overlay}esc {/}{keyhint.desc on:bg.overlay}cancel                     {/}{border.focus on:bg.overlay}│{/}{fg.faint}                           │{/}
+{fg.faint}│              ││           {/}{border.focus on:bg.overlay}╰──────────────────────────────────────────────────────────────╯{/}{fg.faint}                           │{/}
+{fg.faint}│              │╰──────────────────────────────────────────────────────────────────────────────────────────────────────╯{/}
+{fg.faint}│              │╭─ alice ──────────────────────────────────────────────────────────────────────────────────────────────╮{/}
+{fg.faint}│              ││ Memory   41.2G of soft cap 80G  ▲ above guarantee                                                    │{/}
+{fg.faint}│              ││ Kernels  2  sci, sci-legacy                                                                          │{/}
+{fg.faint}│              ││ SSH keys 2  ed25519 alice@pc, alice@nb                                                               │{/}
+{fg.faint}│              ││ Linger   on (kernels survive logout)                                                                 │{/}
+{fg.faint}│              ││                                                                                                      │{/}
+{fg.faint}╰──────────────╯╰──────────────────────────────────────────────────────────────────────────────────────────────────────╯{/}
+{fg.faint} ✓ policy applied to 4 users · 2m ago{/}
+{fg.faint} ↑↓ select  a add  d disable  enter keys  / filter  F1-3 layout                                          ? help  q quit{/}

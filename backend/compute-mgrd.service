@@ -1,0 +1,19 @@
+[Unit]
+Description=Compute Manager daemon
+After=network.target systemd-logind.service
+
+[Service]
+Type=simple
+User=computemgr
+RuntimeDirectory=compute-mgr
+RuntimeDirectoryMode=0755
+StateDirectory=compute-mgr
+StateDirectoryMode=0700
+# site.conf: OWNER=<linux admin>, CM_WIN_TARGET=<WindowsUser>@127.0.0.1
+EnvironmentFile=-/etc/compute-mgr/site.conf
+ExecStart=/opt/compute-mgr/backend/.venv/bin/compute-mgrd
+Restart=on-failure
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

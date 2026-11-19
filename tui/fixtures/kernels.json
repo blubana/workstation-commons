@@ -1,0 +1,24 @@
+[
+  {
+    "id": "alice-12345",
+    "user": "alice",
+    "pid": 12345,
+    "env": "sci",
+    "kind": "ipykernel",
+    "cpu_percent": 1.2,
+    "mem_rss": 200000000,
+    "gpu_active": false,
+    "connection_file": "/home/alice/.local/share/jupyter/runtime/kernel-sci-12345.json"
+  },
+  {
+    "id": "bob-23456",
+    "user": "bob",
+    "pid": 23456,
+    "env": null,
+    "kind": "spyder_kernels",
+    "cpu_percent": null,
+    "mem_rss": null,
+    "gpu_active": null,
+    "connection_file": null
+  }
+]

@@ -1,0 +1,44 @@
+#! tui-mockup 1
+#! size: 120x30
+#! caps: attrs=bold,dim,inverse colors=16 glyphs=unicode source=assumed
+#! title: cm-top - wsl
+#! state: normal
+#! theme: catppuccin-mocha
+#! note: alice, bob, carol and their numbers are INVENTED to show load; demo, system, GPU, hardware and WSL values are real
+#! note: caps assumed (mixed terminals, ANSI-16 following the terminal theme); no test-card screenshot yet
+#! region r1 header 0,0,120,1
+#! region r2 sidebar 0,1,16,27 Pages
+#! region r3 detail 16,1,104,8 WSL
+#! region r4 form 16,9,104,19 .wslconfig  C:\Users\admin\.wslconfig
+#! region r5 keybar 0,29,120,1
+#! focus r4
+{accent.primary bold on:statusbar.bg}  cm-top {/}{fg.default on:statusbar.bg}SERVER  {/}{fg.muted on:statusbar.bg}up 1h 03m                                                                   F1 console  oomd {/}{status.success on:statusbar.bg}✓  {/}{fg.muted on:statusbar.bg}admin  {/}
+{border.default}╭─ {/}{fg.title bold}Pages {/}{border.default}──────╮╭─ {/}{fg.title bold}WSL {/}{border.default}─────────────────────────────────────────────────────────────────────────────────────────────  ─╮{/}
+{border.default}│   {/}{fg.default}1 Overview {/}{border.default}││ {/}{fg.muted}Version   {/}{fg.default}WSL 2.7.8  kernel 6.18.33.1                                                                {/}{border.default}│{/}
+{border.default}│   {/}{fg.default}2 Users    {/}{border.default}││ {/}{fg.muted}Windows   {/}{fg.default}10.0.26200.8655                                                                            {/}{border.default}│{/}
+{border.default}│   {/}{fg.default}3 Kernels  {/}{border.default}││ {/}{fg.muted}Distro    {/}{status.success}✓ {/}{fg.default}Ubuntu-24.04  Running  v2  default                                                       {/}{border.default}│{/}
+{border.default}│   {/}{fg.default}4 Policy   {/}{border.default}││ {/}{fg.muted}Autostart {/}{status.success}✓ {/}{fg.default}task WSL-Autostart  Running (at boot, no login)                                          {/}{border.default}│{/}
+{border.default}│   {/}{fg.default}5 Hardware {/}{border.default}││ {/}{fg.muted}Others    {/}{status.info}i {/}{fg.muted}HOST\guest also runs a WSL VM                                                           {/}{border.default}│{/}
+{border.default}│{/}{fg.default on:selection.inactive.bg}   6 WSL      {/}{border.default}││                                                                                                      │{/}
+{border.default}│   {/}{fg.default}7 Envs     {/}{border.default}│╰──────────────────────────────────────────────────────────────────────────────────────────────────────╯{/}
+{border.default}│   {/}{fg.default}8 History  {/}{border.default}│{/}{border.focus}╭─ {/}{fg.title bold}.wslconfig  C:\Users\admin\.wslconfig {/}{border.focus}───────────────────────────────────────────────────────────╮{/}
+{border.default}│   {/}{fg.default}9 Audit    {/}{border.default}│{/}{border.focus}│ {/}{fg.muted}memory       {/}{fg.default}112GB                                                                                   {/}{border.focus}│{/}
+{border.default}│              │{/}{border.focus}│ {/}{fg.muted}processors   {/}{fg.default}24                                                                                      {/}{border.focus}│{/}
+{border.default}│              │{/}{border.focus}│ {/}{fg.muted}swap         {/}{fg.default}16GB                                                                                    {/}{border.focus}│{/}
+{border.default}│              │{/}{border.focus}│ {/}{fg.muted}networking   mirrored                                                                                {/}{border.focus}│{/}
+{border.default}│              │{/}{border.focus}│ {/}{fg.muted}idle timeout -1 (never stop)                                                                         {/}{border.focus}│{/}
+{border.default}│              │{/}{border.focus}│                                                                                                      │{/}
+{border.default}│              │{/}{border.focus}│ {/}{fg.muted}state        {/}{status.success}✓ in effect  {/}{fg.muted}(no restart pending)                                                       {/}{border.focus}│{/}
+{border.default}│              │{/}{border.focus}│                                                                                                      │{/}
+{border.default}│              │{/}{border.focus}│                                                                                                      │{/}
+{border.default}│              │{/}{border.focus}│                                                                                                      │{/}
+{border.default}│              │{/}{border.focus}│                                                                                                      │{/}
+{border.default}│              │{/}{border.focus}│                                                                                                      │{/}
+{border.default}│              │{/}{border.focus}│                                                                                                      │{/}
+{border.default}│              │{/}{border.focus}│                                                                                                      │{/}
+{border.default}│              │{/}{border.focus}│                                                                                                      │{/}
+{border.default}│              │{/}{border.focus}│                                                                                                      │{/}
+{border.default}│              │{/}{border.focus}│                                                                                                      │{/}
+{border.default}╰──────────────╯{/}{border.focus}╰──────────────────────────────────────────────────────────────────────────────────────────────────────╯{/}
+
+{keyhint.key bold on:statusbar.bg} e {/}{keyhint.desc on:statusbar.bg}edit  {/}{keyhint.key bold on:statusbar.bg}R {/}{keyhint.desc on:statusbar.bg}restart WSL  {/}{keyhint.key bold on:statusbar.bg}r {/}{keyhint.desc on:statusbar.bg}refresh  {/}{keyhint.key bold on:statusbar.bg}F1-3 {/}{keyhint.desc on:statusbar.bg}layout                                                           {/}{keyhint.key bold on:statusbar.bg}? {/}{keyhint.desc on:statusbar.bg}help  {/}{keyhint.key bold on:statusbar.bg}q {/}{keyhint.desc on:statusbar.bg}quit {/}

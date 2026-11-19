@@ -1,0 +1,45 @@
+#! tui-mockup 1
+#! size: 120x30
+#! caps: attrs=bold,dim,inverse colors=16 glyphs=unicode source=assumed
+#! title: cm-top - hardware
+#! state: normal
+#! theme: catppuccin-mocha
+#! note: alice, bob, carol and their numbers are INVENTED to show load; demo, system, GPU, hardware and WSL values are real
+#! note: caps assumed (mixed terminals, ANSI-16 following the terminal theme); no test-card screenshot yet
+#! region r1 header 0,0,120,1
+#! region r2 sidebar 0,1,16,27 Pages
+#! region r3 detail 16,1,52,19 Compute
+#! region r4 detail 69,1,51,19 Host
+#! region r5 table 16,20,104,8 Storage
+#! region r6 keybar 0,29,120,1
+#! focus r3
+{accent.primary bold on:statusbar.bg}  cm-top {/}{fg.default on:statusbar.bg}SERVER  {/}{fg.muted on:statusbar.bg}up 1h 03m                                                                   F1 console  oomd {/}{status.success on:statusbar.bg}✓  {/}{fg.muted on:statusbar.bg}admin  {/}
+{border.default}╭─ {/}{fg.title bold}Pages {/}{border.default}──────╮{/}{border.focus}╭─ {/}{fg.title bold}Compute {/}{border.focus}────────────────────────────────────────╮ {/}{border.default}╭─ {/}{fg.title bold}Host {/}{border.default}──────────────────────────────────────────╮{/}
+{border.default}│   {/}{fg.default}1 Overview {/}{border.default}│{/}{border.focus}│ {/}{fg.muted}CPU      {/}{fg.default}Intel Core Ultra 9 285K                 {/}{border.focus}│ {/}{border.default}│ {/}{fg.muted}Board   {/}{fg.default}Gigabyte Z890 UD WIFI6E                 {/}{border.default}│{/}
+{border.default}│   {/}{fg.default}2 Users    {/}{border.default}│{/}{border.focus}│ {/}{fg.muted}Cores    {/}{fg.default}24 (WSL may use 24)                     {/}{border.focus}│ {/}{border.default}│ {/}{fg.muted}OS      {/}{fg.default}Windows 11 Pro (26200)                  {/}{border.default}│{/}
+{border.default}│   {/}{fg.default}3 Kernels  {/}{border.default}│{/}{border.focus}│                                                  │ {/}{border.default}│ {/}{fg.muted}Boot    {/}{fg.default}2026-11-19 20:41                        {/}{border.default}│{/}
+{border.default}│   {/}{fg.default}4 Policy   {/}{border.default}│{/}{border.focus}│ {/}{fg.muted}RAM host {/}{fg.default}128G  4 x 32G DDR5-4800                 {/}{border.focus}│ {/}{border.default}│                                                 │{/}
+{border.default}│{/}{fg.default on:selection.inactive.bg}   5 Hardware {/}{border.default}│{/}{border.focus}│ {/}{fg.muted}RAM WSL  {/}{fg.default}110G  (user.slice max 104G)             {/}{border.focus}│ {/}{border.default}│ {/}{fg.muted}Linux   {/}{fg.default}Ubuntu 24.04 on WSL2                    {/}{border.default}│{/}
+{border.default}│   {/}{fg.default}6 WSL      {/}{border.default}│{/}{border.focus}│                                                  │ {/}{border.default}│ {/}{fg.muted}Kernel  {/}{fg.default}6.18.33.1                               {/}{border.default}│{/}
+{border.default}│   {/}{fg.default}7 Envs     {/}{border.default}│{/}{border.focus}│ {/}{fg.muted}GPU      {/}{fg.default}NVIDIA GeForce RTX 5080                 {/}{border.focus}│ {/}{border.default}│ {/}{fg.muted}Network {/}{fg.default}mirrored, LAN + tailnet                 {/}{border.default}│{/}
+{border.default}│   {/}{fg.default}8 History  {/}{border.default}│{/}{border.focus}│ {/}{fg.muted}VRAM     {/}{fg.default}16G  driver 617.42                      {/}{border.focus}│ {/}{border.default}│                                                 │{/}
+{border.default}│   {/}{fg.default}9 Audit    {/}{border.default}│{/}{border.focus}│                                                  │ {/}{border.default}│                                                 │{/}
+{border.default}│              │{/}{border.focus}│                                                  │ {/}{border.default}│                                                 │{/}
+{border.default}│              │{/}{border.focus}│                                                  │ {/}{border.default}│                                                 │{/}
+{border.default}│              │{/}{border.focus}│                                                  │ {/}{border.default}│                                                 │{/}
+{border.default}│              │{/}{border.focus}│                                                  │ {/}{border.default}│                                                 │{/}
+{border.default}│              │{/}{border.focus}│                                                  │ {/}{border.default}│                                                 │{/}
+{border.default}│              │{/}{border.focus}│                                                  │ {/}{border.default}│                                                 │{/}
+{border.default}│              │{/}{border.focus}│                                                  │ {/}{border.default}│                                                 │{/}
+{border.default}│              │{/}{border.focus}│                                                  │ {/}{border.default}│                                                 │{/}
+{border.default}│              │{/}{border.focus}╰──────────────────────────────────────────────────╯ {/}{border.default}╰─────────────────────────────────────────────────╯{/}
+{border.default}│              │╭─ {/}{fg.title bold}Storage {/}{border.default}────────────────────────────────────────────────────────────────────────────────────────────╮{/}
+{border.default}│              ││ {/}{fg.default}CT2000T500SSD8 (NVMe)      {/}{fg.muted}2.0T  {/}{fg.faint}physical disk                                                       {/}{border.default}│{/}
+{border.default}│              ││ {/}{fg.default}/   WSL ext4 vhdx         {/}{fg.muted}1007G  {/}{fg.faint}░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   {/}{fg.default}1% {/}{border.default}│{/}
+{border.default}│              ││ {/}{fg.default}C:  Windows NTFS           {/}{fg.muted}1.4T  {/}{ramp.mid}█████████████████████████████████{/}{fg.faint}░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  {/}{fg.default}54% {/}{border.default}│{/}
+{border.default}│              ││                                                                                                      │{/}
+{border.default}│              ││                                                                                                      │{/}
+{border.default}│              ││                                                                                                      │{/}
+{border.default}╰──────────────╯╰──────────────────────────────────────────────────────────────────────────────────────────────────────╯{/}
+{fg.default} Windows values cached 1h {/}{fg.faint}· updated 3m ago{/}
+{keyhint.key bold on:statusbar.bg} r {/}{keyhint.desc on:statusbar.bg}refresh  {/}{keyhint.key bold on:statusbar.bg}1-9 {/}{keyhint.desc on:statusbar.bg}page  {/}{keyhint.key bold on:statusbar.bg}F1-3 {/}{keyhint.desc on:statusbar.bg}layout                                                                        {/}{keyhint.key bold on:statusbar.bg}? {/}{keyhint.desc on:statusbar.bg}help  {/}{keyhint.key bold on:statusbar.bg}q {/}{keyhint.desc on:statusbar.bg}quit {/}

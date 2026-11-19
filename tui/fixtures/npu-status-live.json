@@ -1,0 +1,1 @@
+{"backend":"http://127.0.0.1:8102","up":true,"npu":{"name":"Intel(R) AI Boost","npu_driver_version":"1004404","device_architecture":"3720","npu_device_total_mem_size":"68719476736"},"devices":["CPU","GPU.0","GPU.1","NPU"],"openvino":"2026.4.1-22982-e213a147257-releases/2026/4","cached_models":2,"active":null,"queued":{},"served":0,"errors":0,"avg_latency_s":null}

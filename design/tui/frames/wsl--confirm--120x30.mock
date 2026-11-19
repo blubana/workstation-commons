@@ -1,0 +1,45 @@
+#! tui-mockup 1
+#! size: 120x30
+#! caps: attrs=bold,dim,inverse colors=16 glyphs=unicode source=assumed
+#! title: cm-top - wsl
+#! state: normal
+#! theme: catppuccin-mocha
+#! note: alice, bob, carol and their numbers are INVENTED to show load; demo, system, GPU, hardware and WSL values are real
+#! note: caps assumed (mixed terminals, ANSI-16 following the terminal theme); no test-card screenshot yet
+#! region r1 header 0,0,120,1
+#! region r2 sidebar 0,1,16,27 Pages
+#! region r3 detail 16,1,104,8 WSL
+#! region r4 form 16,9,104,19 .wslconfig  C:\Users\admin\.wslconfig
+#! region r5 keybar 0,29,120,1
+#! region r6 modal 31,10,58,10 Restart WSL?
+#! focus r6
+{fg.faint}  cm-top SERVER  up 1h 03m                                                                   F1 console  oomd ✓  admin{/}
+{fg.faint}╭─ Pages ──────╮╭─ WSL ─────────────────────────────────────────────────────────────────────────────────────────────  ─╮{/}
+{fg.faint}│   1 Overview ││ Version   WSL 2.7.8  kernel 6.18.33.1                                                                │{/}
+{fg.faint}│   2 Users    ││ Windows   10.0.26200.8655                                                                            │{/}
+{fg.faint}│   3 Kernels  ││ Distro    ✓ Ubuntu-24.04  Running  v2  default                                                       │{/}
+{fg.faint}│   4 Policy   ││ Autostart ✓ task WSL-Autostart  Running (at boot, no login)                                          │{/}
+{fg.faint}│   5 Hardware ││ Others    i HOST\guest also runs a WSL VM                                                           │{/}
+{fg.faint}│   6 WSL      ││                                                                                                      │{/}
+{fg.faint}│   7 Envs     │╰──────────────────────────────────────────────────────────────────────────────────────────────────────╯{/}
+{fg.faint}│   8 History  │╭─ .wslconfig  C:\Users\admin\.wslconfig ───────────────────────────────────────────────────────────╮{/}
+{fg.faint}│   9 Audit    ││ memory       {/}{border.focus on:bg.overlay}╭─ {/}{fg.title bold on:bg.overlay}Restart WSL? {/}{border.focus on:bg.overlay}─────────────────────────────────────────╮{/}{fg.faint}                              │{/}
+{fg.faint}│              ││ processors   {/}{border.focus on:bg.overlay}│ {/}{status.warning on:bg.overlay}▲ Disconnects everyone and stops every kernel.         {/}{border.focus on:bg.overlay}│{/}{fg.faint}                              │{/}
+{fg.faint}│              ││ swap         {/}{border.focus on:bg.overlay}│ {/}{fg.default on:bg.overlay}WSL comes back by itself in about 90 s.                {/}{border.focus on:bg.overlay}│{/}{fg.faint}                              │{/}
+{fg.faint}│              ││ networking   {/}{border.focus on:bg.overlay}│ {/}{fg.muted on:bg.overlay}Pending .wslconfig changes apply after restart.        {/}{border.focus on:bg.overlay}│{/}{fg.faint}                              │{/}
+{fg.faint}│              ││ idle timeout {/}{border.focus on:bg.overlay}│                                                        │{/}{fg.faint}                              │{/}
+{fg.faint}│              ││              {/}{border.focus on:bg.overlay}│ {/}{fg.default on:bg.overlay}Type restart to confirm:                               {/}{border.focus on:bg.overlay}│{/}{fg.faint}                              │{/}
+{fg.faint}│              ││ state        {/}{border.focus on:bg.overlay}│                                                        │{/}{fg.faint}                              │{/}
+{fg.faint}│              ││              {/}{border.focus on:bg.overlay}│ {/}{fg.default bold on:bg.overlay}restar{/}{fg.default inverse on:bg.overlay} {/}{border.focus on:bg.overlay}                                                │{/}{fg.faint}                              │{/}
+{fg.faint}│              ││              {/}{border.focus on:bg.overlay}│ {/}{keyhint.key bold on:bg.overlay}enter {/}{keyhint.desc on:bg.overlay}restart  {/}{keyhint.key bold on:bg.overlay}esc {/}{keyhint.desc on:bg.overlay}cancel                              {/}{border.focus on:bg.overlay}│{/}{fg.faint}                              │{/}
+{fg.faint}│              ││              {/}{border.focus on:bg.overlay}╰────────────────────────────────────────────────────────╯{/}{fg.faint}                              │{/}
+{fg.faint}│              ││                                                                                                      │{/}
+{fg.faint}│              ││                                                                                                      │{/}
+{fg.faint}│              ││                                                                                                      │{/}
+{fg.faint}│              ││                                                                                                      │{/}
+{fg.faint}│              ││                                                                                                      │{/}
+{fg.faint}│              ││                                                                                                      │{/}
+{fg.faint}│              ││                                                                                                      │{/}
+{fg.faint}╰──────────────╯╰──────────────────────────────────────────────────────────────────────────────────────────────────────╯{/}
+
+{fg.faint} e edit  R restart WSL  r refresh  F1-3 layout                                                           ? help  q quit{/}

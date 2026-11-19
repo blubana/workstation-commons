@@ -1,0 +1,38 @@
+#! tui-mockup 1
+#! size: 80x24
+#! caps: attrs=bold,dim,inverse colors=16 glyphs=unicode source=assumed
+#! title: cm-top - console Overview
+#! state: normal
+#! theme: catppuccin-mocha
+#! note: alice, bob, carol and their numbers are INVENTED to show load; demo, system, GPU, hardware and WSL values are real
+#! note: caps assumed (mixed terminals, ANSI-16 following the terminal theme); no test-card screenshot yet
+#! region r1 header 0,0,80,1
+#! region r2 chart 0,2,80,7 Memory budget
+#! region r3 list 0,9,80,13 Needs attention (3)
+#! region r4 keybar 0,23,80,1
+#! focus r3
+#! selected r3 1
+{accent.primary bold on:statusbar.bg}  cm-top {/}{fg.default on:statusbar.bg}SERVER  {/}{fg.muted on:statusbar.bg}up 1h 03m                                       oomd {/}{status.success on:statusbar.bg}✓  {/}{fg.muted on:statusbar.bg}admin  {/}
+{tab.active.fg bold on:tab.active.bg} 1 Overview {/}{tab.inactive.fg} 2 Users  3 Kernels  4 Policy  5 HW  6 WSL  7 Envs  8 Hist  9 Audit{/}
+{border.default}╭─ {/}{fg.title bold}Memory budget {/}{border.default}──────────────────────────────────────────────────────────────╮{/}
+{border.default}│                                                                              │{/}
+{border.default}│ {/}{accent.primary}██████████████████████████████{/}{accent.secondary}██████████████{/}{status.info}██{/}{fg.faint}░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ {/}{border.default}│{/}
+{border.default}│ {/}{fg.muted}└─────────────────────────────────────────────┘                              {/}{border.default}│{/}
+{border.default}│ {/}{fg.muted}guaranteed 4 x 16G = 64G of 104G                                             {/}{border.default}│{/}
+{border.default}│ {/}{ramp.low}demo 0.0G  {/}{fg.faint}alice 41.2G  bob 18.5G  carol 2.1G  {/}{fg.muted}free 42.2G                    {/}{border.default}│{/}
+{border.default}╰──────────────────────────────────────────────────────────────────────────────╯{/}
+{border.focus}╭─ {/}{fg.title bold}Needs attention (3) {/}{border.focus}────────────────────────────────────────────────────────╮{/}
+{border.focus}│   {/}{table.header bold}WHAT                                                                WHEN   {/}{border.focus}│{/}
+{border.focus}│{/}{status.warning on:selection.bg} ▲ {/}{selection.fg on:selection.bg}alice above guarantee (41.2G)                                        now   {/}{border.focus}│{/}
+{border.focus}│ {/}{status.info}i {/}{fg.faint}bob kernel idle 40m, 18.2G held                                      40m   {/}{border.focus}│{/}
+{border.focus}│ {/}{status.success}✓ {/}{fg.default}policy applied to 4 users                                             {/}{fg.muted}2m   {/}{border.focus}│{/}
+{border.focus}│                                                                              │{/}
+{border.focus}│                                                                              │{/}
+{border.focus}│                                                                              │{/}
+{border.focus}│                                                                              │{/}
+{border.focus}│                                                                              │{/}
+{border.focus}│                                                                              │{/}
+{border.focus}│                                                                              │{/}
+{border.focus}╰──────────────────────────────────────────────────────────────────────────────╯{/}
+{status.success} ✓ {/}{fg.default}policy applied to 4 users {/}{fg.faint}· 2m ago{/}
+{keyhint.key bold on:statusbar.bg} ↑↓ {/}{keyhint.desc on:statusbar.bg}select  {/}{keyhint.key bold on:statusbar.bg}enter {/}{keyhint.desc on:statusbar.bg}open  {/}{keyhint.key bold on:statusbar.bg}1-9 {/}{keyhint.desc on:statusbar.bg}page  {/}{keyhint.key bold on:statusbar.bg}F1-3 {/}{keyhint.desc on:statusbar.bg}layout                    {/}{keyhint.key bold on:statusbar.bg}? {/}{keyhint.desc on:statusbar.bg}help  {/}{keyhint.key bold on:statusbar.bg}q {/}{keyhint.desc on:statusbar.bg}quit {/}

@@ -1,0 +1,36 @@
+[
+  {
+    "user": "alice",
+    "uid": 1001,
+    "role": "admin",
+    "usage": {
+      "mem_current": 8589934592,
+      "mem_low": 4294967296,
+      "mem_high": 34359738368,
+      "cpu_percent": 150.0,
+      "gpu_mem": null,
+      "gpu_active": true
+    },
+    "kernels": 1,
+    "keys": 1,
+    "linger": true,
+    "sessions": 1
+  },
+  {
+    "user": "bob",
+    "uid": 1002,
+    "role": "user",
+    "usage": {
+      "mem_current": null,
+      "mem_low": null,
+      "mem_high": null,
+      "cpu_percent": null,
+      "gpu_mem": null,
+      "gpu_active": null
+    },
+    "kernels": 1,
+    "keys": 1,
+    "linger": true,
+    "sessions": 1
+  }
+]

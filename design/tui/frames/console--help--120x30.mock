@@ -1,0 +1,46 @@
+#! tui-mockup 1
+#! size: 120x30
+#! caps: attrs=bold,dim,inverse colors=16 glyphs=unicode source=assumed
+#! title: cm-top - console Overview
+#! state: normal
+#! theme: catppuccin-mocha
+#! note: alice, bob, carol and their numbers are INVENTED to show load; demo, system, GPU, hardware and WSL values are real
+#! note: caps assumed (mixed terminals, ANSI-16 following the terminal theme); no test-card screenshot yet
+#! region r1 header 0,0,120,1
+#! region r2 sidebar 0,1,16,27 Pages
+#! region r3 chart 16,1,104,7 Memory budget
+#! region r4 list 16,8,104,20 Needs attention (3)
+#! region r5 keybar 0,29,120,1
+#! region r6 modal 28,5,64,20 Keys
+#! focus r6
+#! selected r4 1
+{fg.faint}  cm-top SERVER  up 1h 03m                                                                   F1 console  oomd ✓  admin{/}
+{fg.faint}╭─ Pages ──────╮╭─ Memory budget ──────────────────────────────────────────────────────────────────────────────────────╮{/}
+{fg.faint}│   1 Overview ││                                                                                                      │{/}
+{fg.faint}│   2 Users    ││ ████████████████████████████████████████████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │{/}
+{fg.faint}│   3 Kernels  ││ └────────────────────────────────────────────────────────────┘                                       │{/}
+{fg.faint}│   4 Policy   ││ guaranteed{/}{border.focus on:bg.overlay}╭─ {/}{fg.title bold on:bg.overlay}Keys {/}{border.focus on:bg.overlay}───────────────────────────────────────────────────────╮{/}{fg.faint}                           │{/}
+{fg.faint}│   5 Hardware ││ demo 0.0G {/}{border.focus on:bg.overlay}│ {/}{fg.muted on:bg.overlay}F1 F2 F3  {/}{fg.default on:bg.overlay}layout: console / dashboard / budget               {/}{border.focus on:bg.overlay}│{/}{fg.faint}                           │{/}
+{fg.faint}│   6 WSL      │╰───────────{/}{border.focus on:bg.overlay}│ {/}{fg.muted on:bg.overlay}v         {/}{fg.default on:bg.overlay}cycle layout                                       {/}{border.focus on:bg.overlay}│{/}{fg.faint}───────────────────────────╯{/}
+{fg.faint}│   7 Envs     │╭─ Needs att{/}{border.focus on:bg.overlay}│ {/}{fg.muted on:bg.overlay}1-9       {/}{fg.default on:bg.overlay}page (hidden pages skipped)                        {/}{border.focus on:bg.overlay}│{/}{fg.faint}───────────────────────────╮{/}
+{fg.faint}│   8 History  ││   WHAT    {/}{border.focus on:bg.overlay}│ {/}{fg.muted on:bg.overlay}tab       {/}{fg.default on:bg.overlay}next pane                                          {/}{border.focus on:bg.overlay}│{/}{fg.faint}                    WHEN   │{/}
+{fg.faint}│   9 Audit    ││ ▲ alice ab{/}{border.focus on:bg.overlay}│ {/}{fg.muted on:bg.overlay}↑↓ j k    {/}{fg.default on:bg.overlay}move                                               {/}{border.focus on:bg.overlay}│{/}{fg.faint}                     now   │{/}
+{fg.faint}│              ││ i bob kern{/}{border.focus on:bg.overlay}│ {/}{fg.muted on:bg.overlay}enter     {/}{fg.default on:bg.overlay}open / drill in                                    {/}{border.focus on:bg.overlay}│{/}{fg.faint}                     40m   │{/}
+{fg.faint}│              ││ ✓ policy a{/}{border.focus on:bg.overlay}│ {/}{fg.muted on:bg.overlay}/         {/}{fg.default on:bg.overlay}filter table                                       {/}{border.focus on:bg.overlay}│{/}{fg.faint}                      2m   │{/}
+{fg.faint}│              ││           {/}{border.focus on:bg.overlay}│ {/}{fg.muted on:bg.overlay}:         {/}{fg.default on:bg.overlay}command palette                                    {/}{border.focus on:bg.overlay}│{/}{fg.faint}                           │{/}
+{fg.faint}│              ││           {/}{border.focus on:bg.overlay}│ {/}{fg.muted on:bg.overlay}r         {/}{fg.default on:bg.overlay}refresh / retry                                    {/}{border.focus on:bg.overlay}│{/}{fg.faint}                           │{/}
+{fg.faint}│              ││           {/}{border.focus on:bg.overlay}│ {/}{fg.muted on:bg.overlay}b n       {/}{fg.default on:bg.overlay}btop / nvitop                                      {/}{border.focus on:bg.overlay}│{/}{fg.faint}                           │{/}
+{fg.faint}│              ││           {/}{border.focus on:bg.overlay}│                                                              │{/}{fg.faint}                           │{/}
+{fg.faint}│              ││           {/}{border.focus on:bg.overlay}│ {/}{fg.muted on:bg.overlay}a d x     {/}{fg.default on:bg.overlay}users: add / disable / remove key                  {/}{border.focus on:bg.overlay}│{/}{fg.faint}                           │{/}
+{fg.faint}│              ││           {/}{border.focus on:bg.overlay}│ {/}{fg.muted on:bg.overlay}s c       {/}{fg.default on:bg.overlay}kernels: stop / Spyder connect                     {/}{border.focus on:bg.overlay}│{/}{fg.faint}                           │{/}
+{fg.faint}│              ││           {/}{border.focus on:bg.overlay}│ {/}{fg.muted on:bg.overlay}e R       {/}{fg.default on:bg.overlay}policy, WSL: edit / restart WSL                    {/}{border.focus on:bg.overlay}│{/}{fg.faint}                           │{/}
+{fg.faint}│              ││           {/}{border.focus on:bg.overlay}│                                                              │{/}{fg.faint}                           │{/}
+{fg.faint}│              ││           {/}{border.focus on:bg.overlay}│                                                              │{/}{fg.faint}                           │{/}
+{fg.faint}│              ││           {/}{border.focus on:bg.overlay}│                                                              │{/}{fg.faint}                           │{/}
+{fg.faint}│              ││           {/}{border.focus on:bg.overlay}│ {/}{keyhint.key bold on:bg.overlay}esc {/}{keyhint.desc on:bg.overlay}close                                                    {/}{border.focus on:bg.overlay}│{/}{fg.faint}                           │{/}
+{fg.faint}│              ││           {/}{border.focus on:bg.overlay}╰──────────────────────────────────────────────────────────────╯{/}{fg.faint}                           │{/}
+{fg.faint}│              ││                                                                                                      │{/}
+{fg.faint}│              ││                                                                                                      │{/}
+{fg.faint}╰──────────────╯╰──────────────────────────────────────────────────────────────────────────────────────────────────────╯{/}
+{fg.faint} ✓ policy applied to 4 users · 2m ago{/}
+{fg.faint} ↑↓ select  enter open  1-9 page  F1-3 layout                                                            ? help  q quit{/}

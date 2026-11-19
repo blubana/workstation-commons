@@ -1,0 +1,14 @@
+[
+  {
+    "name": "sci",
+    "path": "/opt/conda/envs/sci",
+    "python": "3.12.16",
+    "spyder_kernels": "3.1.0"
+  },
+  {
+    "name": "base",
+    "path": "/opt/conda",
+    "python": "3.12.16",
+    "spyder_kernels": null
+  }
+]

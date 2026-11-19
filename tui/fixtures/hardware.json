@@ -1,0 +1,13 @@
+{
+  "cpu": {"model":"Intel Core Ultra 9 285K","logical":24,"wsl_processors":24},
+  "memory": {"host_total":137438953472,"wsl_total":118157307904,"dimms":[34359738368,34359738368,34359738368,34359738368],"speed_mts":4800,"user_slice_max":111669149696},
+  "gpus":[{"index":0,"name":"NVIDIA GeForce RTX 5080","mem_total":17094934528}],
+  "board":"Gigabyte Z890 UD WIFI6E",
+  "os":"Windows 11 Pro (26200)",
+  "host_boot":"2026-11-19 20:41",
+  "disks":{
+    "physical":[{"name":"CT2000T500SSD8","media":"NVMe","size":2000000000000}],
+    "linux":[{"mount":"/","total":1081258016768,"used":10812580168}],
+    "windows":[{"mount":"C:","total":1539316278886,"used":831230790598}]
+  }
+}

@@ -1,0 +1,26 @@
+#! tui-mockup 1
+#! size: 70x20
+#! caps: attrs=bold,dim,inverse colors=16 glyphs=unicode source=assumed
+#! title: cm-top - too small
+#! state: toosmall
+#! theme: catppuccin-mocha
+
+
+
+
+
+{accent.primary bold}                                cm-top{/}
+
+{fg.title bold}                          Terminal too small{/}
+
+{fg.muted}                      Width    {/}{status.error bold}70   {/}{fg.muted}needs {/}{fg.default}80  {/}{status.error}✗{/}
+{fg.muted}                      Height   {/}{status.error bold}20   {/}{fg.muted}needs {/}{fg.default}24  {/}{status.error}✗{/}
+
+{fg.muted}                   Enlarge the window to continue.{/}
+
+
+
+
+
+
+{keyhint.key bold on:statusbar.bg}                                                               q {/}{keyhint.desc on:statusbar.bg}quit {/}

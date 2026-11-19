@@ -1,0 +1,18 @@
+[project]
+name = "compute-mgr"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = ["fastapi>=0.115", "httpx>=0.27", "pydantic>=2", "uvicorn>=0.34", "nvidia-ml-py"]
+
+[project.scripts]
+compute-mgrd = "compute_mgr.server:main"
+
+[dependency-groups]
+dev = ["pytest", "httpx"]
+
+[build-system]
+requires = ["uv_build>=0.8,<1"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-root = ""

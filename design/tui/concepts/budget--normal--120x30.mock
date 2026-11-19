@@ -1,0 +1,44 @@
+#! tui-mockup 1
+#! size: 120x30
+#! caps: attrs=bold,dim,inverse colors=16 glyphs=unicode source=assumed
+#! title: cm-top — budget map
+#! state: normal
+#! theme: catppuccin-mocha
+#! note: users alice, bob, carol and their numbers are invented to show load; demo + system values are real
+#! note: caps assumed: mixed Windows/Mac/Linux terminals, 16-colour ANSI following the terminal theme
+#! region r1 header 0,0,120,1
+#! region r2 chart 0,2,120,9 Memory budget · user.slice max 104G of 110G WSL
+#! region r3 form 0,11,44,17 Policy
+#! region r4 list 45,11,75,17 Needs attention
+#! region r5 keybar 0,29,120,1
+#! focus r2
+{accent.primary bold on:statusbar.bg}  cm-top {/}{fg.default on:statusbar.bg}SERVER  {/}{fg.muted on:statusbar.bg}up 1h 03m                                                                   oomd {/}{status.success on:statusbar.bg}✓ on  {/}{fg.muted on:statusbar.bg}admin admin  {/}
+ {tab.active.fg bold on:tab.active.bg} 1 Budget {/}{tab.inactive.fg} 2 Users  3 Kernels  4 Hardware  5 WSL  6 Audit{/}
+{border.focus}╭─ {/}{fg.title bold}Memory budget · user.slice max 104G of 110G WSL {/}{border.focus}────────────────────────────────────────────────────────────────────╮{/}
+{border.focus}│                                                                                                                      │{/}
+{border.focus}│ {/}{accent.primary}██████████████████████████████████████████████{/}{accent.secondary}█████████████████████{/}{status.info}██{/}{fg.faint}░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ {/}{border.focus}│{/}
+{border.focus}│ {/}{fg.muted}└─────────────────────────────────────────────────────────────────────┘                                              {/}{border.focus}│{/}
+{border.focus}│ {/}{fg.muted}guaranteed 4 × 16G = 64G                                                                                             {/}{border.focus}│{/}
+{border.focus}│                                                                                                                      │{/}
+{border.focus}│ {/}{ramp.low}■ demo 0.0G   {/}{fg.faint}■ alice 41.2G   ■ bob 18.5G   ■ carol 2.1G   {/}{fg.muted}free 42.2G                                                {/}{border.focus}│{/}
+{border.focus}│ {/}{fg.muted}CPU  {/}{fg.default}equal shares, weight 100 · idle cores are lent out                                                              {/}{border.focus}│{/}
+{border.focus}╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯{/}
+{border.default}╭─ {/}{fg.title bold}Policy {/}{border.default}─────────────────────────────────╮ ╭─ {/}{fg.title bold}Needs attention {/}{border.default}───────────────────────────────────────────────────────╮{/}
+{border.default}│ {/}{fg.muted}Guarantee  {/}{fg.default}16G per user                  {/}{border.default}│ │   {/}{table.header bold}WHAT                                           WHEN                   {/}{border.default}│{/}
+{border.default}│ {/}{fg.muted}Soft cap   {/}{fg.default}80G per user                  {/}{border.default}│ │ {/}{status.warning}▲ {/}{fg.faint}alice above guarantee (41.2G)                   now                   {/}{border.default}│{/}
+{border.default}│ {/}{fg.muted}Total max  {/}{fg.default}104G                          {/}{border.default}│ │ {/}{status.info}i {/}{fg.faint}bob kernel idle 40m, 18.2G held                 40m                   {/}{border.default}│{/}
+{border.default}│ {/}{fg.muted}CPU weight {/}{fg.default}100 (equal)                   {/}{border.default}│ │ {/}{status.success}✓ {/}{fg.default}policy applied to 4 users                        {/}{fg.muted}2m                   {/}{border.default}│{/}
+{border.default}│ {/}{fg.muted}GPU        {/}{fg.default}unlimited, shared             {/}{border.default}│ │                                                                         │{/}
+{border.default}│ {/}{fg.muted}oomd       {/}{status.success}✓ kill at 60% pressure        {/}{border.default}│ │                                                                         │{/}
+{border.default}│                                          │ │                                                                         │{/}
+{border.default}│                                          │ │                                                                         │{/}
+{border.default}│                                          │ │                                                                         │{/}
+{border.default}│                                          │ │                                                                         │{/}
+{border.default}│                                          │ │                                                                         │{/}
+{border.default}│                                          │ │                                                                         │{/}
+{border.default}│                                          │ │                                                                         │{/}
+{border.default}│                                          │ │                                                                         │{/}
+{border.default}│                                          │ │                                                                         │{/}
+{border.default}╰──────────────────────────────────────────╯ ╰─────────────────────────────────────────────────────────────────────────╯{/}
+{fg.default} e edit policy · values apply live, no reboot{/}
+{keyhint.key bold on:statusbar.bg} e {/}{keyhint.desc on:statusbar.bg}edit policy  {/}{keyhint.key bold on:statusbar.bg}enter {/}{keyhint.desc on:statusbar.bg}drill in  {/}{keyhint.key bold on:statusbar.bg}1-6 {/}{keyhint.desc on:statusbar.bg}tab                                                                  {/}{keyhint.key bold on:statusbar.bg}? {/}{keyhint.desc on:statusbar.bg}help  {/}{keyhint.key bold on:statusbar.bg}q {/}{keyhint.desc on:statusbar.bg}quit {/}

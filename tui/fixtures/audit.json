@@ -1,0 +1,17 @@
+[
+  {
+    "time": 1763550000,
+    "actor": "alice",
+    "action": "key-add",
+    "target": "bob",
+    "ok": true
+  },
+  {
+    "time": 1763549900,
+    "actor": "alice",
+    "action": "kernel-stop",
+    "target": "bob-123",
+    "ok": false,
+    "detail": "Kernel exited"
+  }
+]

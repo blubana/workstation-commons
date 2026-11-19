@@ -1,0 +1,37 @@
+#! tui-mockup 1
+#! size: 80x24
+#! caps: attrs=bold,dim,inverse colors=16 glyphs=unicode source=assumed
+#! title: cm-top - console Users
+#! state: normal
+#! theme: catppuccin-mocha
+#! note: alice, bob, carol and their numbers are INVENTED to show load; demo, system, GPU, hardware and WSL values are real
+#! note: caps assumed (mixed terminals, ANSI-16 following the terminal theme); no test-card screenshot yet
+#! region r1 header 0,0,80,1
+#! region r2 list 0,2,80,20 Users (4)
+#! region r3 keybar 0,23,80,1
+#! focus r2
+#! selected r2 2
+{accent.primary bold on:statusbar.bg}  cm-top {/}{fg.default on:statusbar.bg}SERVER  {/}{fg.muted on:statusbar.bg}up 1h 03m                                       oomd {/}{status.success on:statusbar.bg}✓  {/}{fg.muted on:statusbar.bg}admin  {/}
+{tab.inactive.fg} 1 Overview {/}{tab.active.fg bold on:tab.active.bg} 2 Users {/}{tab.inactive.fg} 3 Kernels  4 Policy  5 HW  6 WSL  7 Envs  8 Hist  9 Audit{/}
+{border.focus}╭─ {/}{fg.title bold}Users (4) {/}{border.focus}─────────────────────────────────────────────────────── {/}{fg.muted}sort mem {/}{border.focus}─╮{/}
+{border.focus}│   {/}{table.header bold}USER        MEM   CPU KERN GPU KEYS LINGER                                 {/}{border.focus}│{/}
+{border.focus}│   {/}{fg.default}demo       0.0G    0%    0  {/}{fg.faint}·     {/}{fg.default}1 {/}{fg.muted}on                                     {/}{border.focus}│{/}
+{border.focus}│{/}{accent.primary bold on:selection.bg} ❯ {/}{selection.fg on:selection.bg}alice     41.2G  812%    2  {/}{status.info on:selection.bg}●     {/}{selection.fg on:selection.bg}2 on                                     {/}{border.focus}│{/}
+{border.focus}│   {/}{fg.faint}bob       18.5G   96%    1  ·     1 {/}{fg.muted}on                                     {/}{border.focus}│{/}
+{border.focus}│   {/}{fg.faint}carol      2.1G    3%    1  ·     1 {/}{fg.muted}on                                     {/}{border.focus}│{/}
+{border.focus}│                                                                              │{/}
+{border.focus}│                                                                              │{/}
+{border.focus}│                                                                              │{/}
+{border.focus}│                                                                              │{/}
+{border.focus}│                                                                              │{/}
+{border.focus}│                                                                              │{/}
+{border.focus}│                                                                              │{/}
+{border.focus}│                                                                              │{/}
+{border.focus}│                                                                              │{/}
+{border.focus}│                                                                              │{/}
+{border.focus}│                                                                              │{/}
+{border.focus}│                                                                              │{/}
+{border.focus}│                                                                              │{/}
+{border.focus}╰──────────────────────────────────────────────────────────────────────────────╯{/}
+{status.success} ✓ {/}{fg.default}policy applied to 4 users {/}{fg.faint}· 2m ago{/}
+{keyhint.key bold on:statusbar.bg} ↑↓ {/}{keyhint.desc on:statusbar.bg}select  {/}{keyhint.key bold on:statusbar.bg}a {/}{keyhint.desc on:statusbar.bg}add  {/}{keyhint.key bold on:statusbar.bg}d {/}{keyhint.desc on:statusbar.bg}disable  {/}{keyhint.key bold on:statusbar.bg}enter {/}{keyhint.desc on:statusbar.bg}keys  {/}{keyhint.key bold on:statusbar.bg}/ {/}{keyhint.desc on:statusbar.bg}filter  {/}{keyhint.key bold on:statusbar.bg}F1-3 {/}{keyhint.desc on:statusbar.bg}layout  {/}{keyhint.key bold on:statusbar.bg}? {/}{keyhint.desc on:statusbar.bg}help  {/}{keyhint.key bold on:statusbar.bg}q {/}{keyhint.desc on:statusbar.bg}quit {/}

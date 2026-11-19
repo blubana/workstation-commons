@@ -1,0 +1,46 @@
+#! tui-mockup 1
+#! size: 120x30
+#! caps: attrs=bold,dim,inverse colors=16 glyphs=unicode source=assumed
+#! title: cm-top - dashboard
+#! state: normal
+#! theme: catppuccin-mocha
+#! note: alice, bob, carol and their numbers are INVENTED to show load; demo, system, GPU, hardware and WSL values are real
+#! note: caps assumed (mixed terminals, ANSI-16 following the terminal theme); no test-card screenshot yet
+#! region r1 header 0,0,120,1
+#! region r2 panel 0,1,60,7 Host - Ultra 9 285K - 24 cores
+#! region r3 panel 61,1,59,7 GPU - RTX 5080 - 16G
+#! region r4 list 0,8,64,20 Users - mem vs 16G guarantee / 80G cap
+#! region r5 list 65,8,55,20 Kernels (4)
+#! region r6 keybar 0,29,120,1
+#! focus r4
+#! selected r4 2
+{accent.primary bold on:statusbar.bg}  cm-top {/}{fg.default on:statusbar.bg}SERVER  {/}{fg.muted on:statusbar.bg}up 1h 03m                                                                 F2 dashboard  oomd {/}{status.success on:statusbar.bg}✓  {/}{fg.muted on:statusbar.bg}admin  {/}
+{border.default}╭─ {/}{fg.title bold}Host - Ultra 9 285K - 24 cores {/}{border.default}─────────────────────────╮ ╭─ {/}{fg.title bold}GPU - RTX 5080 - 16G {/}{border.default}──────────────────────────────────╮{/}
+{border.default}│ {/}{fg.muted}CPU   {/}{fg.faint}░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   {/}{fg.default}0% {/}{border.default}│ │ {/}{fg.muted}Util  {/}{fg.faint}░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   {/}{fg.default}0% {/}{border.default}│{/}
+{border.default}│ {/}{fg.muted}RAM   {/}{fg.faint}░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   {/}{fg.default}1% {/}{border.default}│ │ {/}{fg.muted}VRAM  {/}{ramp.low}█{/}{fg.faint}░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   {/}{fg.default}4% {/}{border.default}│{/}
+{border.default}│ {/}{fg.muted}Swap  {/}{fg.faint}░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   {/}{fg.default}0% {/}{border.default}│ │                                                         │{/}
+{border.default}│                                                          │ │ {/}{fg.muted}Temp     {/}{fg.default}34 C   12 W                                    {/}{border.default}│{/}
+{border.default}│ {/}{fg.muted}1h {/}{accent.primary}█▂▂▁▂▁▂▂▁█▂▂▁▂▁▂▂▁█▂▂▁▂▁▂▂▁█▂▂▁▂▁▂▂▁█▂▂▁▂▁▂▂▁█▂▂▁▂▁▂▂ {/}{border.default}│ │ {/}{fg.muted}Per-user n/a under WSL                                  {/}{border.default}│{/}
+{border.default}╰──────────────────────────────────────────────────────────╯ ╰─────────────────────────────────────────────────────────╯{/}
+{border.focus}╭─ {/}{fg.title bold}Users - mem vs 16G guarantee / 80G cap {/}{border.focus}─────────────────────╮ {/}{border.default}╭─ {/}{fg.title bold}Kernels (4) {/}{border.default}───────────────────────────────────────╮{/}
+{border.focus}│   {/}{table.header bold}USER        MEM 0───────────────16G 80G    CPU KERN GPU    {/}{border.focus}│ {/}{border.default}│ {/}{table.header bold}ID         ENV           RSS  AGE                   {/}{border.default}│{/}
+{border.focus}│   {/}{fg.default}demo       0.0G {/}{fg.faint}░░░░░{/}{fg.muted}┊{/}{fg.faint}░░░░░░░░░░░░░░░░░░    {/}{fg.default}0%    0  {/}{fg.faint}·     {/}{border.focus}│ {/}{border.default}│ {/}{fg.faint}alice-4711 sci         12.4G   3h                   {/}{border.default}│{/}
+{border.focus}│{/}{accent.primary bold on:selection.bg} ❯ {/}{selection.fg on:selection.bg}alice     41.2G {/}{ramp.mid on:selection.bg}████████████{/}{selection.fg on:selection.bg}░░░░░░░░░░░░  812%    2  {/}{status.info on:selection.bg}●     {/}{border.focus}│ {/}{border.default}│ {/}{fg.faint}alice-4802 sci-legacy  28.1G   1h                   {/}{border.default}│{/}
+{border.focus}│   {/}{fg.faint}bob       18.5G {/}{ramp.mid}██████{/}{fg.faint}░░░░░░░░░░░░░░░░░░   96%    1  ·     {/}{border.focus}│ {/}{border.default}│ {/}{fg.faint}bob-5120   sci         18.2G  40m                   {/}{border.default}│{/}
+{border.focus}│   {/}{fg.faint}carol      2.1G {/}{ramp.low}█{/}{fg.faint}░░░░{/}{fg.muted}┊{/}{fg.faint}░░░░░░░░░░░░░░░░░░    3%    1  ·     {/}{border.focus}│ {/}{border.default}│ {/}{fg.faint}carol-6001 sci          2.0G   5m                   {/}{border.default}│{/}
+{border.focus}│                                                              │ {/}{border.default}│                                                     │{/}
+{border.focus}│                                                              │ {/}{border.default}│                                                     │{/}
+{border.focus}│                                                              │ {/}{border.default}│                                                     │{/}
+{border.focus}│                                                              │ {/}{border.default}│                                                     │{/}
+{border.focus}│                                                              │ {/}{border.default}│                                                     │{/}
+{border.focus}│                                                              │ {/}{border.default}│                                                     │{/}
+{border.focus}│                                                              │ {/}{border.default}│                                                     │{/}
+{border.focus}│                                                              │ {/}{border.default}│                                                     │{/}
+{border.focus}│                                                              │ {/}{border.default}│                                                     │{/}
+{border.focus}│                                                              │ {/}{border.default}│                                                     │{/}
+{border.focus}│                                                              │ {/}{border.default}│                                                     │{/}
+{border.focus}│                                                              │ {/}{border.default}│                                                     │{/}
+{border.focus}│                                                              │ {/}{border.default}│                                                     │{/}
+{border.focus}╰──────────────────────────────────────────────────────────────╯ {/}{border.default}╰─────────────────────────────────────────────────────╯{/}
+{status.warning} ▲ {/}{fg.default}alice above guarantee: 41.2G {/}{fg.faint}· now{/}
+{keyhint.key bold on:statusbar.bg} tab {/}{keyhint.desc on:statusbar.bg}pane  {/}{keyhint.key bold on:statusbar.bg}s {/}{keyhint.desc on:statusbar.bg}stop  {/}{keyhint.key bold on:statusbar.bg}: {/}{keyhint.desc on:statusbar.bg}commands  {/}{keyhint.key bold on:statusbar.bg}1-9 {/}{keyhint.desc on:statusbar.bg}page  {/}{keyhint.key bold on:statusbar.bg}F1-3 {/}{keyhint.desc on:statusbar.bg}layout                                                     {/}{keyhint.key bold on:statusbar.bg}? {/}{keyhint.desc on:statusbar.bg}help  {/}{keyhint.key bold on:statusbar.bg}q {/}{keyhint.desc on:statusbar.bg}quit {/}

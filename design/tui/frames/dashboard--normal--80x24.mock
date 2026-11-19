@@ -1,0 +1,39 @@
+#! tui-mockup 1
+#! size: 80x24
+#! caps: attrs=bold,dim,inverse colors=16 glyphs=unicode source=assumed
+#! title: cm-top - dashboard
+#! state: normal
+#! theme: catppuccin-mocha
+#! note: alice, bob, carol and their numbers are INVENTED to show load; demo, system, GPU, hardware and WSL values are real
+#! note: caps assumed (mixed terminals, ANSI-16 following the terminal theme); no test-card screenshot yet
+#! region r1 header 0,0,80,1
+#! region r2 panel 0,1,40,6 Host - Ultra 9 285K - 24c
+#! region r3 panel 41,1,39,6 GPU - RTX 5080 - 16G
+#! region r4 list 0,7,80,15 Users - mem vs 16G guarantee / 80G cap
+#! region r5 keybar 0,23,80,1
+#! focus r4
+#! selected r4 2
+{accent.primary bold on:statusbar.bg}  cm-top {/}{fg.default on:statusbar.bg}SERVER  {/}{fg.muted on:statusbar.bg}up 1h 03m                                       oomd {/}{status.success on:statusbar.bg}✓  {/}{fg.muted on:statusbar.bg}admin  {/}
+{border.default}╭─ {/}{fg.title bold}Host - Ultra 9 285K - 24c {/}{border.default}──────────╮ ╭─ {/}{fg.title bold}GPU - RTX 5080 - 16G {/}{border.default}──────────────╮{/}
+{border.default}│ {/}{fg.muted}CPU   {/}{fg.faint}░░░░░░░░░░░░░░░░░░░░░░░░░   {/}{fg.default}0% {/}{border.default}│ │ {/}{fg.muted}Util  {/}{fg.faint}░░░░░░░░░░░░░░░░░░░░░░░░   {/}{fg.default}0% {/}{border.default}│{/}
+{border.default}│ {/}{fg.muted}RAM   {/}{fg.faint}░░░░░░░░░░░░░░░░░░░░░░░░░   {/}{fg.default}1% {/}{border.default}│ │ {/}{fg.muted}VRAM  {/}{fg.faint}░░░░░░░░░░░░░░░░░░░░░░░░   {/}{fg.default}4% {/}{border.default}│{/}
+{border.default}│ {/}{fg.muted}Swap  {/}{fg.faint}░░░░░░░░░░░░░░░░░░░░░░░░░   {/}{fg.default}0% {/}{border.default}│ │ {/}{fg.muted}Temp     {/}{fg.default}34 C   12 W                {/}{border.default}│{/}
+{border.default}│                                      │ │ {/}{fg.muted}Per-user n/a under WSL              {/}{border.default}│{/}
+{border.default}╰──────────────────────────────────────╯ ╰─────────────────────────────────────╯{/}
+{border.focus}╭─ {/}{fg.title bold}Users - mem vs 16G guarantee / 80G cap {/}{border.focus}─────────────────────────────────────╮{/}
+{border.focus}│   {/}{table.header bold}USER        MEM 0───────────────16G 80G    CPU KERN GPU                    {/}{border.focus}│{/}
+{border.focus}│   {/}{fg.default}demo       0.0G {/}{fg.faint}░░░░░{/}{fg.muted}┊{/}{fg.faint}░░░░░░░░░░░░░░░░░░    {/}{fg.default}0%    0  {/}{fg.faint}·                     {/}{border.focus}│{/}
+{border.focus}│{/}{accent.primary bold on:selection.bg} ❯ {/}{selection.fg on:selection.bg}alice     41.2G {/}{ramp.mid on:selection.bg}████████████{/}{selection.fg on:selection.bg}░░░░░░░░░░░░  812%    2  {/}{status.info on:selection.bg}●                     {/}{border.focus}│{/}
+{border.focus}│   {/}{fg.faint}bob       18.5G {/}{ramp.mid}██████{/}{fg.faint}░░░░░░░░░░░░░░░░░░   96%    1  ·                     {/}{border.focus}│{/}
+{border.focus}│   {/}{fg.faint}carol      2.1G {/}{ramp.low}█{/}{fg.faint}░░░░{/}{fg.muted}┊{/}{fg.faint}░░░░░░░░░░░░░░░░░░    3%    1  ·                     {/}{border.focus}│{/}
+{border.focus}│                                                                              │{/}
+{border.focus}│                                                                              │{/}
+{border.focus}│                                                                              │{/}
+{border.focus}│                                                                              │{/}
+{border.focus}│                                                                              │{/}
+{border.focus}│                                                                              │{/}
+{border.focus}│                                                                              │{/}
+{border.focus}│                                                                              │{/}
+{border.focus}╰──────────────────────────────────────────────────────────────────────────────╯{/}
+{status.warning} ▲ {/}{fg.default}alice above guarantee: 41.2G {/}{fg.faint}· now{/}
+{keyhint.key bold on:statusbar.bg} tab {/}{keyhint.desc on:statusbar.bg}pane  {/}{keyhint.key bold on:statusbar.bg}s {/}{keyhint.desc on:statusbar.bg}stop  {/}{keyhint.key bold on:statusbar.bg}: {/}{keyhint.desc on:statusbar.bg}commands  {/}{keyhint.key bold on:statusbar.bg}1-9 {/}{keyhint.desc on:statusbar.bg}page  {/}{keyhint.key bold on:statusbar.bg}F1-3 {/}{keyhint.desc on:statusbar.bg}layout             {/}{keyhint.key bold on:statusbar.bg}? {/}{keyhint.desc on:statusbar.bg}help  {/}{keyhint.key bold on:statusbar.bg}q {/}{keyhint.desc on:statusbar.bg}quit {/}

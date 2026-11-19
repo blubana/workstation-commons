@@ -1,0 +1,2 @@
+computemgr ALL=(root) NOPASSWD: /usr/local/libexec/compute-mgr-helper
+Defaults:computemgr !requiretty, env_reset

@@ -1,0 +1,18 @@
+{
+  "wsl_version":"2.7.8",
+  "kernel":"6.18.33.1",
+  "windows":"10.0.26200.8655",
+  "distros":[{"name":"Ubuntu-24.04","state":"Running","version":2,"default":true}],
+  "autostart_task":"Running",
+  "config":{
+    "path":"C:\\Users\\owner\\.wslconfig",
+    "mtime":null,
+    "memory_gb":112,
+    "processors":24,
+    "swap_gb":16,
+    "networking_mode":"mirrored",
+    "vm_idle_timeout":-1,
+    "raw":{"wsl2":{"memory":"112GB","processors":"24","swap":"16GB","networkingMode":"mirrored","vmIdleTimeout":"-1"}}
+  },
+  "restart_pending":false
+}

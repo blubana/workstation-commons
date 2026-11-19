@@ -1,0 +1,16 @@
+{
+  "alice": [
+    {
+      "fingerprint": "SHA256:fixture-alice",
+      "type": "ssh-ed25519",
+      "comment": "alice@fixture"
+    }
+  ],
+  "bob": [
+    {
+      "fingerprint": "SHA256:fixture-bob",
+      "type": "ssh-ed25519",
+      "comment": "bob@fixture"
+    }
+  ]
+}

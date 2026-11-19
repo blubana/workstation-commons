@@ -1,0 +1,45 @@
+#! tui-mockup 1
+#! size: 120x30
+#! caps: attrs=bold,dim,inverse colors=16 glyphs=unicode source=assumed
+#! title: cm-top - console Users
+#! state: normal
+#! theme: catppuccin-mocha
+#! note: alice, bob, carol and their numbers are INVENTED to show load; demo, system, GPU, hardware and WSL values are real
+#! note: caps assumed (mixed terminals, ANSI-16 following the terminal theme); no test-card screenshot yet
+#! region r1 header 0,0,120,1
+#! region r2 sidebar 0,1,16,27 Pages
+#! region r3 list 16,1,104,20 Users (4)
+#! region r4 detail 16,21,104,7 alice
+#! region r5 keybar 0,29,120,1
+#! focus r3
+#! selected r3 2
+{accent.primary bold on:statusbar.bg}  cm-top {/}{fg.default on:statusbar.bg}SERVER  {/}{fg.muted on:statusbar.bg}up 1h 03m                                                                   F1 console  oomd {/}{status.success on:statusbar.bg}✓  {/}{fg.muted on:statusbar.bg}admin  {/}
+{border.default}╭─ {/}{fg.title bold}Pages {/}{border.default}──────╮{/}{border.focus}╭─ {/}{fg.title bold}Users (4) {/}{border.focus}─────────────────────────────────────────────────────────────────────────────── {/}{fg.muted}sort mem {/}{border.focus}─╮{/}
+{border.default}│   {/}{fg.default}1 Overview {/}{border.default}│{/}{border.focus}│   {/}{table.header bold}USER        MEM   CPU KERN GPU KEYS LINGER                                                         {/}{border.focus}│{/}
+{border.default}│{/}{fg.default on:selection.inactive.bg}   2 Users    {/}{border.default}│{/}{border.focus}│   {/}{fg.default}demo       0.0G    0%    0  {/}{fg.faint}·     {/}{fg.default}1 {/}{fg.muted}on                                                             {/}{border.focus}│{/}
+{border.default}│   {/}{fg.default}3 Kernels  {/}{border.default}│{/}{border.focus}│{/}{accent.primary bold on:selection.bg} ❯ {/}{selection.fg on:selection.bg}alice     41.2G  812%    2  {/}{status.info on:selection.bg}●     {/}{selection.fg on:selection.bg}2 on                                                             {/}{border.focus}│{/}
+{border.default}│   {/}{fg.default}4 Policy   {/}{border.default}│{/}{border.focus}│   {/}{fg.faint}bob       18.5G   96%    1  ·     1 {/}{fg.muted}on                                                             {/}{border.focus}│{/}
+{border.default}│   {/}{fg.default}5 Hardware {/}{border.default}│{/}{border.focus}│   {/}{fg.faint}carol      2.1G    3%    1  ·     1 {/}{fg.muted}on                                                             {/}{border.focus}│{/}
+{border.default}│   {/}{fg.default}6 WSL      {/}{border.default}│{/}{border.focus}│                                                                                                      │{/}
+{border.default}│   {/}{fg.default}7 Envs     {/}{border.default}│{/}{border.focus}│                                                                                                      │{/}
+{border.default}│   {/}{fg.default}8 History  {/}{border.default}│{/}{border.focus}│                                                                                                      │{/}
+{border.default}│   {/}{fg.default}9 Audit    {/}{border.default}│{/}{border.focus}│                                                                                                      │{/}
+{border.default}│              │{/}{border.focus}│                                                                                                      │{/}
+{border.default}│              │{/}{border.focus}│                                                                                                      │{/}
+{border.default}│              │{/}{border.focus}│                                                                                                      │{/}
+{border.default}│              │{/}{border.focus}│                                                                                                      │{/}
+{border.default}│              │{/}{border.focus}│                                                                                                      │{/}
+{border.default}│              │{/}{border.focus}│                                                                                                      │{/}
+{border.default}│              │{/}{border.focus}│                                                                                                      │{/}
+{border.default}│              │{/}{border.focus}│                                                                                                      │{/}
+{border.default}│              │{/}{border.focus}│                                                                                                      │{/}
+{border.default}│              │{/}{border.focus}╰──────────────────────────────────────────────────────────────────────────────────────────────────────╯{/}
+{border.default}│              │╭─ {/}{fg.title bold}alice {/}{border.default}──────────────────────────────────────────────────────────────────────────────────────────────╮{/}
+{border.default}│              ││ {/}{fg.muted}Memory   {/}{fg.faint}41.2G {/}{fg.muted}of soft cap 80G  {/}{status.warning}▲ above guarantee                                                    {/}{border.default}│{/}
+{border.default}│              ││ {/}{fg.muted}Kernels  {/}{fg.faint}2  sci, sci-legacy                                                                          {/}{border.default}│{/}
+{border.default}│              ││ {/}{fg.muted}SSH keys {/}{fg.faint}2  ed25519 alice@pc, alice@nb                                                               {/}{border.default}│{/}
+{border.default}│              ││ {/}{fg.muted}Linger   on (kernels survive logout)                                                                 {/}{border.default}│{/}
+{border.default}│              ││                                                                                                      │{/}
+{border.default}╰──────────────╯╰──────────────────────────────────────────────────────────────────────────────────────────────────────╯{/}
+{status.success} ✓ {/}{fg.default}policy applied to 4 users {/}{fg.faint}· 2m ago{/}
+{keyhint.key bold on:statusbar.bg} ↑↓ {/}{keyhint.desc on:statusbar.bg}select  {/}{keyhint.key bold on:statusbar.bg}a {/}{keyhint.desc on:statusbar.bg}add  {/}{keyhint.key bold on:statusbar.bg}d {/}{keyhint.desc on:statusbar.bg}disable  {/}{keyhint.key bold on:statusbar.bg}enter {/}{keyhint.desc on:statusbar.bg}keys  {/}{keyhint.key bold on:statusbar.bg}/ {/}{keyhint.desc on:statusbar.bg}filter  {/}{keyhint.key bold on:statusbar.bg}F1-3 {/}{keyhint.desc on:statusbar.bg}layout                                          {/}{keyhint.key bold on:statusbar.bg}? {/}{keyhint.desc on:statusbar.bg}help  {/}{keyhint.key bold on:statusbar.bg}q {/}{keyhint.desc on:statusbar.bg}quit {/}

@@ -1,0 +1,21 @@
+{
+  "up": true,
+  "npu": {
+    "name": "Intel(R) AI Boost",
+    "npu_driver_version": "1004404"
+  },
+  "devices": [
+    "CPU",
+    "GPU.0",
+    "NPU"
+  ],
+  "openvino": "2025.4",
+  "cached_models": 2,
+  "active": "alice",
+  "queued": {
+    "bob": 2
+  },
+  "served": 14,
+  "errors": 0,
+  "avg_latency_s": 0.05
+}

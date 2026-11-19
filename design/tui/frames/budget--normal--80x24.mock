@@ -1,0 +1,38 @@
+#! tui-mockup 1
+#! size: 80x24
+#! caps: attrs=bold,dim,inverse colors=16 glyphs=unicode source=assumed
+#! title: cm-top - budget
+#! state: normal
+#! theme: catppuccin-mocha
+#! note: alice, bob, carol and their numbers are INVENTED to show load; demo, system, GPU, hardware and WSL values are real
+#! note: caps assumed (mixed terminals, ANSI-16 following the terminal theme); no test-card screenshot yet
+#! region r1 header 0,0,80,1
+#! region r2 chart 0,2,80,7 Memory budget - user.slice max 104G (WSL 110G)
+#! region r3 form 0,9,36,13 Policy
+#! region r4 list 37,9,43,13 Needs attention (3)
+#! region r5 keybar 0,23,80,1
+#! focus r2
+{accent.primary bold on:statusbar.bg}  cm-top {/}{fg.default on:statusbar.bg}SERVER  {/}{fg.muted on:statusbar.bg}up 1h 03m                                       oomd {/}{status.success on:statusbar.bg}✓  {/}{fg.muted on:statusbar.bg}admin  {/}
+{tab.active.fg bold on:tab.active.bg} 1 Overview {/}{tab.inactive.fg} 2 Users  3 Kernels  4 Policy  5 HW  6 WSL  7 Envs  8 Hist  9 Audit{/}
+{border.focus}╭─ {/}{fg.title bold}Memory budget - user.slice max 104G (WSL 110G) {/}{border.focus}─────────────────────────────╮{/}
+{border.focus}│                                                                              │{/}
+{border.focus}│ {/}{accent.primary}██████████████████████████████{/}{accent.secondary}██████████████{/}{status.info}██{/}{fg.faint}░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ {/}{border.focus}│{/}
+{border.focus}│ {/}{fg.muted}└─────────────────────────────────────────────┘                              {/}{border.focus}│{/}
+{border.focus}│ {/}{fg.muted}guaranteed 4 x 16G = 64G of 104G                                             {/}{border.focus}│{/}
+{border.focus}│                                                                              │{/}
+{border.focus}╰──────────────────────────────────────────────────────────────────────────────╯{/}
+{border.default}╭─ {/}{fg.title bold}Policy {/}{border.default}─────────────────────────╮ ╭─ {/}{fg.title bold}Needs attention (3) {/}{border.default}───────────────────╮{/}
+{border.default}│ {/}{fg.muted}Guarantee {/}{fg.default}16G / user             {/}{border.default}│ │   {/}{table.header bold}WHAT                           WHEN   {/}{border.default}│{/}
+{border.default}│ {/}{fg.muted}Soft cap  {/}{fg.default}80G / user             {/}{border.default}│ │{/}{status.warning on:selection.inactive.bg} ▲ {/}{fg.faint on:selection.inactive.bg}alice above guarantee (41.2G)   now   {/}{border.default}│{/}
+{border.default}│ {/}{fg.muted}Total max {/}{fg.default}104G                   {/}{border.default}│ │ {/}{status.info}i {/}{fg.faint}bob kernel idle 40m, 18.2G h⋯   40m   {/}{border.default}│{/}
+{border.default}│ {/}{fg.muted}CPU       {/}{fg.default}equal, weight 100      {/}{border.default}│ │ {/}{status.success}✓ {/}{fg.default}policy applied to 4 users        {/}{fg.muted}2m   {/}{border.default}│{/}
+{border.default}│ {/}{fg.muted}GPU       {/}{fg.default}shared, no limit       {/}{border.default}│ │                                         │{/}
+{border.default}│ {/}{fg.muted}oomd      {/}{status.success}✓ kill at 60%          {/}{border.default}│ │                                         │{/}
+{border.default}│                                  │ │                                         │{/}
+{border.default}│                                  │ │                                         │{/}
+{border.default}│                                  │ │                                         │{/}
+{border.default}│                                  │ │                                         │{/}
+{border.default}│                                  │ │                                         │{/}
+{border.default}╰──────────────────────────────────╯ ╰─────────────────────────────────────────╯{/}
+{fg.default} policy values apply live, no reboot{/}
+{keyhint.key bold on:statusbar.bg} e {/}{keyhint.desc on:statusbar.bg}edit policy  {/}{keyhint.key bold on:statusbar.bg}enter {/}{keyhint.desc on:statusbar.bg}open  {/}{keyhint.key bold on:statusbar.bg}1-9 {/}{keyhint.desc on:statusbar.bg}page  {/}{keyhint.key bold on:statusbar.bg}F1-3 {/}{keyhint.desc on:statusbar.bg}layout                {/}{keyhint.key bold on:statusbar.bg}? {/}{keyhint.desc on:statusbar.bg}help  {/}{keyhint.key bold on:statusbar.bg}q {/}{keyhint.desc on:statusbar.bg}quit {/}

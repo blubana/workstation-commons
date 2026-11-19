@@ -1,0 +1,11 @@
+[wsl2]
+memory=112GB
+processors=24
+swap=16GB
+networkingMode=mirrored
+firewall=true
+vmIdleTimeout=-1
+
+[experimental]
+autoMemoryReclaim=gradual
+sparseVhd=true

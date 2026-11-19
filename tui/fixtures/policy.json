@@ -1,0 +1,6 @@
+{
+  "mem_low_gb": 16,
+  "mem_high_gb": 80,
+  "total_max_gb": 104,
+  "cpu_weight": 100
+}

@@ -1,0 +1,100 @@
+{
+  "hostname": "fixture-host",
+  "uptime_s": 93784,
+  "cpu": {
+    "cores": 24,
+    "percent": 37.5,
+    "freq_mhz": 3988.4,
+    "per_core": [
+      7,
+      83,
+      17,
+      24,
+      9,
+      76,
+      38,
+      63,
+      42,
+      14,
+      93,
+      28,
+      16,
+      21,
+      67,
+      32,
+      85,
+      9,
+      44,
+      20,
+      40,
+      31,
+      27,
+      30
+    ]
+  },
+  "mem": {
+    "total": 68719476736,
+    "used": 25769803776,
+    "breakdown": {
+      "used": 25769803776,
+      "cached": 12884901888,
+      "buffers": 1073741824,
+      "available": 42949672960
+    }
+  },
+  "swap": {
+    "total": 8589934592,
+    "used": null
+  },
+  "gpus": [
+    {
+      "index": 0,
+      "name": "Example GPU",
+      "util_percent": 42,
+      "mem_total": 17179869184,
+      "mem_used": 4294967296,
+      "temp_c": 58,
+      "power_w": 104.5,
+      "clock_mhz": 2100,
+      "enc_util": 7,
+      "dec_util": 13,
+      "fan_percent": 43
+    },
+    {
+      "index": 1,
+      "name": null,
+      "util_percent": null,
+      "mem_total": null,
+      "mem_used": null,
+      "temp_c": null,
+      "power_w": null,
+      "clock_mhz": null,
+      "enc_util": null,
+      "dec_util": null,
+      "fan_percent": null
+    }
+  ],
+  "oomd": {
+    "active": true
+  },
+  "time": 1763550000,
+  "net": [
+    {
+      "iface": "eth0",
+      "rx_bps": 2791833.5,
+      "tx_bps": 622592.0
+    },
+    {
+      "iface": "eth1",
+      "rx_bps": 8192.0,
+      "tx_bps": 0.0
+    }
+  ],
+  "disk_io": [
+    {
+      "dev": "nvme0n1",
+      "read_bps": 8224768.0,
+      "write_bps": 3153920.0
+    }
+  ]
+}

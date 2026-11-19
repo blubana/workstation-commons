@@ -1,0 +1,30 @@
+[0;2m  cm-top SERVER  up 1h 03m                                                                   F1 console  oomd ✓  admin[0m  [0m
+[0;2m╭─ Pages ──────╮╭─ WSL ─────────────────────────────────────────────────────────────────────────────────────────────  ─╮[0m
+[0;2m│   1 Overview ││ Version   WSL 2.7.8  kernel 6.18.33.1                                                                │[0m
+[0;2m│   2 Users    ││ Windows   10.0.26200.8655                                                                            │[0m
+[0;2m│   3 Kernels  ││ Distro    ✓ Ubuntu-24.04  Running  v2  default                                                       │[0m
+[0;2m│   4 Policy   ││ Autostart ✓ task WSL-Autostart  Running (at boot, no login)                                          │[0m
+[0;2m│   5 Hardware ││ Others    i HOST\guest also runs a WSL VM                                                           │[0m
+[0;2m│   6 WSL      ││                                                                                                      │[0m
+[0;2m│   7 Envs     │╰──────────────────────────────────────────────────────────────────────────────────────────────────────╯[0m
+[0;2m│   8 History  │╭─ .wslconfig  C:\Users\admin\.wslconfig ───────────────────────────────────────────────────────────╮[0m
+[0;2m│   9 Audit    ││ memory       [0;34m╭─ [0;1mRestart WSL? [0;34m─────────────────────────────────────────╮[0;2m                              │[0m
+[0;2m│              ││ processors   [0;34m│ [0;33m▲ Disconnects everyone and stops every kernel.         [0;34m│[0;2m                              │[0m
+[0;2m│              ││ swap         [0;34m│ [0mWSL comes back by itself in about 90 s.                [0;34m│[0;2m                              │[0m
+[0;2m│              ││ networking   [0;34m│ [0;97mPending .wslconfig changes apply after restart.        [0;34m│[0;2m                              │[0m
+[0;2m│              ││ idle timeout [0;34m│                                                        │[0;2m                              │[0m
+[0;2m│              ││              [0;34m│ [0mType restart to confirm:                               [0;34m│[0;2m                              │[0m
+[0;2m│              ││ state        [0;34m│                                                        │[0;2m                              │[0m
+[0;2m│              ││              [0;34m│ [0;1mrestar[0;7m [0;34m                                                │[0;2m                              │[0m
+[0;2m│              ││              [0;34m│ [0;34;1menter [0;2mrestart  [0;34;1mesc [0;2mcancel                              [0;34m│[0;2m                              │[0m
+[0;2m│              ││              [0;34m╰────────────────────────────────────────────────────────╯[0;2m                              │[0m
+[0;2m│              ││                                                                                                      │[0m
+[0;2m│              ││                                                                                                      │[0m
+[0;2m│              ││                                                                                                      │[0m
+[0;2m│              ││                                                                                                      │[0m
+[0;2m│              ││                                                                                                      │[0m
+[0;2m│              ││                                                                                                      │[0m
+[0;2m│              ││                                                                                                      │[0m
+[0;2m╰──────────────╯╰──────────────────────────────────────────────────────────────────────────────────────────────────────╯[0m
+[0m                                                                                                                        [0m
+[0;2m e edit  R restart WSL  r refresh  F1-3 layout                                                           ? help  q quit[0m [0m
