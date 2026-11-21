@@ -17,14 +17,14 @@ case "$what" in
   termscp)
     echo "termscp sftp://$me@$HOST:$PORT   (on your computer · install: brew/winget/cargo install termscp)" ;;
   spyder)
-    echo "Hostname $me@$HOST:$PORT · Keyfile ~/.ssh/id_ed25519 · start: spyder-kernel sci|sci-spyder5|sci-legacy" ;;
+    echo "Hostname $me@$HOST:$PORT · Keyfile ~/.ssh/id_ed25519 · start: spyder-kernel <your Spyder version, e.g. 6.1>" ;;
   mykernels)
     rt=$HOME/.local/share/jupyter/runtime; out=""
     for f in "$rt"/kernel-*.json; do
       [ -e "$f" ] || continue
       pgrep -u "$uid" -f -- "$f" >/dev/null 2>&1 && out="$out$(basename "$f") "
     done
-    if [ -n "$out" ]; then echo "$out→ scp -P $PORT $me@$HOST:$rt/<file> ."; else echo "none · start one: spyder-kernel sci"; fi ;;
+    if [ -n "$out" ]; then echo "$out→ scp -P $PORT $me@$HOST:$rt/<file> ."; else echo "none · start one: spyder-kernel 6.1"; fi ;;
   gpu)
     nvidia-smi --query-gpu=utilization.gpu,memory.used,memory.total --format=csv,noheader,nounits 2>/dev/null \
       | awk -F', *' '{printf "RTX 5080 · %s%% busy · VRAM %.1f / %.1f GB\n", $1, $2/1024, $3/1024}' || echo "n/a" ;;

@@ -1,0 +1,35 @@
+#!/bin/bash
+# usage: spyder-kernel <spyder-version|env>     e.g. spyder-kernel 6.1 · spyder-kernel 4.2 · spyder-kernel sci
+#        spyder-kernel --list
+K=/opt/compute/kernels; E=/opt/conda/envs
+table() { cat <<T
+3.2  $E/sci-legacy  ipykernel
+3.3  $K/sk-0.5      spyder-kernels 0.5
+4.0  $K/sk-1.10     spyder-kernels 1.10
+4.1  $K/sk-1.9      spyder-kernels 1.9
+4.2  $K/sk-1.10     spyder-kernels 1.10
+5.0  $K/sk-2.0      spyder-kernels 2.0
+5.1  $K/sk-2.1      spyder-kernels 2.1
+5.2  $K/sk-2.2      spyder-kernels 2.2
+5.3  $K/sk-2.3      spyder-kernels 2.3
+5.4  $K/sk-2.4      spyder-kernels 2.4
+5.5  $E/sci-spyder5 spyder-kernels 2.5
+6.0  $K/sk-3.0      spyder-kernels 3.0
+6.1  $E/sci         spyder-kernels 3.1
+T
+}
+arg=${1:-sci}
+if [ "$arg" = "--list" ]; then echo "Spyder  environment              kernel"; table | awk '{printf "%-7s %-24s %s %s\n",$1,$2,$3,$4}'; exit 0; fi
+case "$arg" in
+  [0-9]*) minor=$(echo "$arg" | cut -d. -f1,2); PREFIX=$(table | awk -v m="$minor" '$1==m{print $2}')
+          [ -n "$PREFIX" ] || { echo "unsupported Spyder version $arg (see: spyder-kernel --list)"; exit 1; } ;;
+  *) PREFIX=$E/$arg ;;
+esac
+PY=$PREFIX/bin/python; [ -x "$PY" ] || { echo "unknown env $arg (see: spyder-kernel --list)"; exit 1; }
+NAME=$(basename "$PREFIX")
+RT=$HOME/.local/share/jupyter/runtime; mkdir -p "$RT"
+CF=$RT/kernel-$NAME-$$.json
+if "$PY" -c 'import spyder_kernels' 2>/dev/null; then MOD=spyder_kernels.console; else MOD=ipykernel_launcher; fi
+nohup "$PY" -m $MOD --ip=127.0.0.1 -f "$CF" >"$RT/kernel-$NAME-$$.log" 2>&1 &
+for i in $(seq 20); do [ -s "$CF" ] && break; sleep 0.5; done
+echo "connection file: $CF"; cat "$CF"

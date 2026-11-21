@@ -52,11 +52,30 @@ Host compute
 
 伺服器提供三個共用環境，已裝好常用的資料科學與機器學習套件：numpy、scipy、pandas、polars、matplotlib、seaborn、plotly、scikit-learn、statsmodels、xgboost、lightgbm、catboost、PyTorch（CUDA）、cupy、transformers、OpenVINO、opencv 等。
 
-| 環境 | Python | 給哪個 Spyder |
+| 環境 | Python | 用途 |
 |---|---|---|
-| `sci` | 3.12 | **Spyder 6**（spyder-kernels 3.1） |
-| `sci-spyder5` | 3.11 | **Spyder 5**（spyder-kernels 2.5） |
-| `sci-legacy` | 3.11 | **Spyder 3.2.8** 與其他舊版（ipykernel） |
+| `sci` | 3.12 | 主要環境；Spyder 6.1、VS Code、PyCharm、Zed |
+| `sci-spyder5` | 3.11 | Spyder 5.5 |
+| `sci-legacy` | 3.11 | Spyder 3.2 與其他舊版工具；也是下列舊版 Spyder kernel 的基底 |
+
+**Spyder 每個小版本只接受特定版本的 kernel**，所以啟動時直接寫你的 Spyder 版本即可（Spyder 選單 Help → About 可查版本）：
+
+```bash
+spyder-kernel 6.1      # 也可以寫 6.1.8；支援 3.2、3.3、4.0–4.2、5.0–5.5、6.0、6.1
+spyder-kernel --list   # 列出對照表
+```
+
+| Spyder | kernel 環境 |
+|---|---|
+| 6.1 | `sci`（spyder-kernels 3.1） |
+| 6.0 | spyder-kernels 3.0 |
+| 5.5 | `sci-spyder5`（2.5） |
+| 5.0–5.4 | spyder-kernels 2.0–2.4，各一個 |
+| 4.0–4.2 | spyder-kernels 1.9 / 1.10 |
+| 3.3 | spyder-kernels 0.5 |
+| 3.2 | `sci-legacy`（ipykernel） |
+
+舊版 Spyder（6.0 以前）的 kernel 使用 Python 3.11 與 `sci-legacy` 的套件。
 
 直接在終端機使用：
 
@@ -89,9 +108,7 @@ conda activate other
 
 1. 在伺服器啟動 kernel（依你的 Spyder 版本選環境）：
    ```bash
-   ssh compute spyder-kernel sci          # Spyder 6
-   ssh compute spyder-kernel sci-spyder5  # Spyder 5
-   ssh compute spyder-kernel sci-legacy   # Spyder 3.2.8
+   ssh compute spyder-kernel 6.1          # 寫你的 Spyder 版本，例如 5.4、4.2、3.3
    ```
    它會印出 `connection file: /home/<帳號>/.local/share/jupyter/runtime/kernel-....json`。
 2. 把這個檔案複製到自己電腦：
@@ -106,6 +123,18 @@ conda activate other
 4. 連上後在 Spyder 執行的程式碼都在伺服器上跑，檔案路徑也是伺服器上的路徑。
 
 kernel 會一直在背景跑，關掉 Spyder 也不會停（登出也不會）。不用時請在 `cm-top` 的 Kernels 頁選取後按 `s` 停止，以釋放記憶體與 GPU。
+
+### 其他編輯器：VS Code、PyCharm、Zed
+
+三者都透過 SSH 連線，請先完成 `~/.ssh/config` 的 `Host compute` 設定（含 `Port 2200`）。
+
+| 編輯器 | 做法 | Python 直譯器 |
+|---|---|---|
+| **VS Code** | 安裝擴充 *Remote - SSH* → 左下角 `><` → Connect to Host → `compute`。第一次會自動在伺服器安裝 VS Code Server（約 1 分鐘）。再裝 *Python*、*Jupyter* 擴充（裝在遠端）即可跑 `.py` 與 `.ipynb`。 | `/opt/conda/envs/sci/bin/python` |
+| **PyCharm**（Professional） | Settings → Python Interpreter → Add → **On SSH** → Host `192.168.1.10`、Port `2200`、帳號、Key pair 選私鑰 → 直譯器路徑填右欄；Deployment 會用 SFTP 同步專案。也可用 *Remote Development*（JetBrains Gateway）整個 IDE 跑在伺服器。Community 版不支援遠端直譯器。 | 同上 |
+| **Zed** | Command Palette → `projects: open remote` → 新增 `ssh compute`（或 `ssh -p 2200 <帳號>@192.168.1.10`）。Zed 會自動在伺服器安裝 remote server。 | 在專案設定 Python 路徑為上方路徑 |
+
+Jupyter Notebook 的 kernel 清單選 `sci`、`sci-spyder5`、`sci-legacy` 任一環境的 Python 都可用。
 
 ## 6. 使用 GPU
 
@@ -215,6 +244,7 @@ tail -f ~/project/run.log
 | `CUDA out of memory` | 其他人或你自己的舊 kernel 佔用 VRAM，用 `nvidia-smi` 查看，停止不用的 kernel。 |
 | NPU 回 `429` / `503` | 你排了太多工作，或排隊太久，稍後再試。 |
 | Spyder 顯示 `Permission denied for user ...` | Hostname 沒寫 `:2200`，連到了 Windows 的 SSH。改成 `<帳號>@<IP>:2200` |
+| Spyder 顯示 kernel 版本不相容 | `spyder-kernel` 後面改寫你的 Spyder 版本（`spyder-kernel 5.4`） |
 | Spyder 連不上 | 確認 kernel 還在跑（`cm-top` → Kernels），connection file 是最新的那個，Hostname 有帶 `:2200`。 |
 | 想知道伺服器狀態 | `cm-top`、`nvidia-smi`、`fastfetch`。 |
 

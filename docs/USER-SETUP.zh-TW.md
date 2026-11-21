@@ -72,7 +72,7 @@ ssh compute
 執行 `termscp sftp://你的帳號@192.168.1.10:2200`，左邊是你的電腦、右邊是伺服器，選檔案按 `Space` 傳送，`q` 離開。
 
 ## 步驟 8：連接 Spyder（選用）
-1. 啟動 kernel：`ssh compute spyder-kernel sci`（Spyder 5 用 `sci-spyder5`，Spyder 3 用 `sci-legacy`）。記下印出的 `connection file:` 路徑。
+1. 啟動 kernel：`ssh compute spyder-kernel <你的 Spyder 版本>`，例如 `spyder-kernel 6.1`、`spyder-kernel 5.4`（Spyder → Help → About 查版本）。記下印出的 `connection file:` 路徑。
 2. 下載該檔：`scp compute:<剛才的路徑> .`
 3. Spyder → **Consoles → Connect to an existing kernel**
    - 選剛下載的 `.json`
