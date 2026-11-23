@@ -1,5 +1,4 @@
 import json
-from collections import deque
 from pathlib import Path
 
 from .collect import read
@@ -28,18 +27,40 @@ def policy():
             "total_max_gb": value("MemoryMax", "G"), "cpu_weight": value("CPUWeight")}
 
 
+def reverse_lines(log):
+    position = log.seek(0, 2)
+    fragments = []
+    while position:
+        size = min(position, 64 * 1024)
+        position -= size
+        log.seek(position)
+        first, *lines = log.read(size).split(b"\n")
+        if not lines:
+            fragments.append(first)
+            continue
+        yield b"".join([lines[-1], *reversed(fragments)])
+        yield from reversed(lines[:-1])
+        fragments = [first]
+    if fragments:
+        yield b"".join(reversed(fragments))
+
+
 def audit(limit):
-    latest = deque(maxlen=limit)
+    latest = []
+    if limit == 0:
+        return latest
     try:
-        with AUDIT_LOG.open() as log:
-            for line in log:
+        with AUDIT_LOG.open("rb") as log:
+            for line in reverse_lines(log):
                 try:
                     event = json.loads(line)
-                    if event.get("phase") == "attempt":
-                        continue          # pre-mutation record; the result line carries the outcome
+                    if not isinstance(event, dict) or event.get("phase") == "attempt":
+                        continue
                     latest.append({key: event[key] for key in ("time", "actor", "action", "target", "ok")})
                 except (ValueError, KeyError, TypeError):
                     continue
+                if len(latest) == limit:
+                    break
     except FileNotFoundError:
         return []
-    return list(reversed(latest))
+    return latest

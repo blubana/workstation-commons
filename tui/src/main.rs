@@ -30,6 +30,7 @@ use std::{
 
 
 const REFRESH: Duration = Duration::from_secs(2);
+const HISTORY_REFRESH: Duration = Duration::from_secs(10);
 const USAGE: &str = "Usage: cm-top [--mock <dir>] [--frame <layout>:<page> --cols C --rows R]";
 
 type DetailUpdate = (View, Result<Detail, String>);
@@ -186,6 +187,7 @@ async fn api_worker(
     let empty = StreamMetrics::default();
     let mut snapshot = source.current(&http, &mut mock, &empty).await;
     let mut next = Instant::now() + REFRESH;
+    let mut next_history: Option<Instant> = None;
     *publisher.lock().expect("snapshot lock poisoned") = Some((snapshot.clone(), None));
     let detail = source.detail(&http, &mut mock, &view, snapshot.identity.as_ref()).await;
     *publisher.lock().expect("snapshot lock poisoned") = Some((snapshot.clone(), Some((view.clone(), detail))));
@@ -194,13 +196,14 @@ async fn api_worker(
         let mut action = None;
         let mut load = false;
         let mut force = false;
-        let deadline = mock.next_npu.map_or(next, |npu| next.min(npu));
+        let refresh_deadline = mock.next_npu.map_or(next, |npu| next.min(npu));
+        let deadline = next_history.map_or(refresh_deadline, |history| refresh_deadline.min(history));
         match tokio::time::timeout_at(deadline.into(), incoming.recv()).await {
             Ok(Some(Command::Load(target))) => { view = target; load = true; }
             Ok(Some(Command::Refresh(target))) => { view = target; force = true; }
             Ok(Some(Command::Mutate(pending))) => action = Some(pending),
             Ok(None) => break,
-            Err(_) => refresh = true,
+            Err(_) => refresh = Instant::now() >= refresh_deadline,
         }
         // Keep the newest filter when keys are pressed faster than a request completes.
         while action.is_none() {
@@ -234,8 +237,19 @@ async fn api_worker(
             }
             None
         };
-        let periodic = refresh && matches!(view, View::Audit | View::History { .. } | View::Overview | View::Wsl);
+        let history = matches!(view, View::History { .. });
+        if !history {
+            next_history = None;
+        }
+        let periodic = if history {
+            next_history.is_some_and(|deadline| Instant::now() >= deadline)
+        } else {
+            refresh && matches!(view, View::Audit | View::Overview | View::Wsl)
+        };
         let detail = if view != View::None && (load || force || notice.is_some() || periodic) {
+            if history {
+                next_history = Some(Instant::now() + HISTORY_REFRESH);
+            }
             let result = source.detail(&http, &mut mock, &view, snapshot.identity.as_ref()).await;
             Some((view.clone(), result))
         } else {

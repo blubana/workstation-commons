@@ -38,9 +38,9 @@ Host compute
 
 | 資源 | 規則 |
 |---|---|
-| CPU（24 核） | 所有人權重相同。沒人用時你可以用滿；多人同時用時平均分配。 |
-| 記憶體 | 每人**保底 24 GB**（別人再忙也不會被搶走）、**軟上限 80 GB**（超過會被減速）、全部使用者合計上限 104 GB。 |
-| GPU（RTX 5080，16 GB VRAM） | 不設限制，大家共用。VRAM 用完時其他人會配置失敗，用完請釋放（見 §6）。 |
+| CPU（24 核） | 遠端使用者合計最多 **18 核**，25% 保留給伺服器本機操作者。沒人用時你可以用滿這 18 核；多人同時用時平均分配。 |
+| 記憶體 | 每人**保底 24 GB**（別人再忙也不會被搶走）、**軟上限 72 GB**（超過會被減速）、全部使用者合計上限 88 GB。 |
+| GPU（RTX 5080，16 GB VRAM） | 每個程式預設最多用 75% VRAM（約 12 GB），GPU 空閒時可用 `CM_GPU_FRACTION=1` 解除。VRAM 用完時其他人會配置失敗，用完請釋放（見 §6）。 |
 | NPU（Intel AI Boost） | 透過排隊系統使用，一次只跑一個工作，使用者之間輪流（見 §7）。 |
 | 磁碟 | 家目錄 `~/` 放程式與資料；`~/data` 是給你放資料集的私人資料夾。 |
 
@@ -118,7 +118,7 @@ conda activate other
 3. Spyder：**Consoles → Connect to an existing kernel**
    - Connection file：選剛才複製的 `.json`
    - 勾選 **This is a remote kernel (via SSH)**
-   - Hostname：`<帳號>@192.168.1.10:2200`（遠端用 `<tailscale-ip>:2200`）
+   - Spyder 4–6：Hostname `192.168.1.10`（遠端 `<tailscale-ip>`）、Port `2200`、Username `<帳號>`；Spyder 3.x：Hostname `<帳號>@192.168.1.10:2200`
    - 選 **Keyfile**，指向你的私鑰 `id_ed25519`
 4. 連上後在 Spyder 執行的程式碼都在伺服器上跑，檔案路徑也是伺服器上的路徑。
 
@@ -239,13 +239,13 @@ tail -f ~/project/run.log
 | 狀況 | 處理 |
 |---|---|
 | `Permission denied (publickey)` | 金鑰不對或還沒被加入，確認用的是交給管理員的那把金鑰（`ssh -i ~/.ssh/id_ed25519 ...`）。Windows 若出現 `UNPROTECTED PRIVATE KEY FILE`，私鑰權限太寬，請管理員協助。 |
-| 程式突然變很慢 | 可能超過 80 GB 軟上限被減速，看 `cm-top` 的記憶體條。 |
+| 程式突然變很慢 | 可能超過 72 GB 軟上限被減速，看 `cm-top` 的記憶體條。 |
 | 程式被終止（Killed） | 記憶體壓力過大時被系統終止。減少資料量、分批處理，或請管理員調整策略。 |
 | `CUDA out of memory` | 其他人或你自己的舊 kernel 佔用 VRAM，用 `nvidia-smi` 查看，停止不用的 kernel。 |
 | NPU 回 `429` / `503` | 你排了太多工作，或排隊太久，稍後再試。 |
-| Spyder 顯示 `Permission denied for user ...` | Hostname 沒寫 `:2200`，連到了 Windows 的 SSH。改成 `<帳號>@<IP>:2200` |
+| Spyder 顯示 `Permission denied for user ...` | Port 不是 `2200`（3.x 是 Hostname 沒寫 `:2200`），連到了 Windows 的 SSH |
 | Spyder 顯示 kernel 版本不相容 | `spyder-kernel` 後面改寫你的 Spyder 版本（`spyder-kernel 5.4`） |
-| Spyder 連不上 | 確認 kernel 還在跑（`cm-top` → Kernels），connection file 是最新的那個，Hostname 有帶 `:2200`。 |
+| Spyder 連不上 | 確認 kernel 還在跑（`cm-top` → Kernels），connection file 是最新的那個，Port 是 `2200`。 |
 | 想知道伺服器狀態 | `cm-top`、`nvidia-smi`、`fastfetch`。 |
 
 ## 10. 使用守則

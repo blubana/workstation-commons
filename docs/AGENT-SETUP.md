@@ -53,7 +53,7 @@ Detect the OS yourself (`uname` / `$env:OS`); don't ask.
 5b. **File transfer**: install termscp if missing (macOS `brew install termscp`, Windows `winget install termscp`, else `cargo install termscp`; ask before installing Homebrew/Rust themselves). Tell the user: `termscp sftp://<account>@<host>:2200`.
 6. **Test**: `ssh -o BatchMode=yes compute 'echo ok && whoami'`. Expected `ok` and the account. On `Permission denied (publickey)`: the admin has not added the key yet, or the wrong key is used.
 7. **Report to the user**: what was created (paths), the command to start a kernel, and the Spyder dialog values:
-   Connect to an existing kernel → the downloaded `.json` → "remote kernel via SSH" → Hostname `<account>@192.168.1.10:2200` → Keyfile `~/.ssh/id_ed25519`.
+   Connect to an existing kernel → the downloaded `.json` → "remote kernel via SSH" → Hostname `192.168.1.10`, Port `2200`, Username `<account>` (Spyder 3.x: Hostname `<account>@192.168.1.10:2200`) → Keyfile `~/.ssh/id_ed25519`.
 
 ## Done when
 `ssh compute` logs in without a password prompt (passphrase/agent prompt is fine) and the user knows how to start a kernel.

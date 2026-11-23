@@ -17,7 +17,7 @@ case "$what" in
   termscp)
     echo "termscp sftp://$me@$HOST:$PORT   (on your computer · install: brew/winget/cargo install termscp)" ;;
   spyder)
-    echo "Hostname $me@$HOST:$PORT · Keyfile ~/.ssh/id_ed25519 · start: spyder-kernel <your Spyder version, e.g. 6.1>" ;;
+    echo "Spyder 4–6: Host $HOST · Port $PORT · User $me · Keyfile ~/.ssh/id_ed25519 (3.x: $me@$HOST:$PORT) · start: spyder-kernel 6.1" ;;
   mykernels)
     rt=$HOME/.local/share/jupyter/runtime; out=""
     for f in "$rt"/kernel-*.json; do

@@ -126,3 +126,39 @@ def test_live_hardware_history(collector, tmp_path):
         "net_rx": 7.5, "net_tx": 0, "disk_read": 1536, "disk_write": 512, "gpu_temp": 37.5,
     }.items():
         assert history.points(metric, None, first, 10) == [[first, None], [first + 10, expected]]
+
+
+def test_slow_discovery_keeps_fast_counters_and_gpu_attribution(collector, monkeypatch):
+    now = 0
+    monkeypatch.setattr("compute_mgr.collect.time.monotonic", lambda: now)
+    collector.gpu = lambda: ([], {23: 100 + now, 25: 50})
+    service_calls = []
+    collector.service_state = lambda: service_calls.append(now) or now > 0
+    system, users, kernels = collector.collect()
+    assert system["oomd"]["active"] is False
+    assert users[0]["usage"]["gpu_mem"] == 100
+    assert kernels[0]["gpu_active"] is True
+
+    (collector.proc / "23/fd/1").unlink()
+    (collector.proc / "23/fd").rmdir()
+    (collector.proc / "24/cmdline").write_bytes(b"python\0")
+    (collector.cgroup / "user-1001.slice/memory.current").write_text("456")
+    (collector.proc / "25").mkdir()
+    (collector.proc / "25/status").write_text("Uid: 1002 1002 1002 1002\n")
+    now = 2
+    system, users, kernels = collector.collect()
+    assert service_calls == [0]
+    assert system["oomd"]["active"] is False
+    assert users[0]["usage"]["mem_current"] == 456
+    assert users[0]["usage"]["gpu_mem"] == 102
+    assert users[1]["usage"]["gpu_mem"] == 50
+    assert [kernel["pid"] for kernel in kernels] == [23, 24]
+    assert kernels[0]["gpu_active"] is True
+
+    now = 10
+    system, users, kernels = collector.collect()
+    assert service_calls == [0, 10]
+    assert system["oomd"]["active"] is True
+    assert users[0]["usage"]["gpu_active"] is None
+    assert [kernel["pid"] for kernel in kernels] == [23]
+    assert kernels[0]["gpu_active"] is None

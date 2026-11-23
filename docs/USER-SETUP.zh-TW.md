@@ -77,7 +77,7 @@ ssh compute
 3. Spyder → **Consoles → Connect to an existing kernel**
    - 選剛下載的 `.json`
    - 勾 **This is a remote kernel (via SSH)**
-   - Hostname：`你的帳號@192.168.1.10:2200`
+   - Spyder 4–6：Hostname `192.168.1.10`、Port `2200`、Username `你的帳號`（Spyder 3.x 才是 Hostname 填 `你的帳號@192.168.1.10:2200`）
    - Keyfile：選 `~/.ssh/id_ed25519`（私鑰，留在你電腦上）
 4. 按 OK。✅ 在 Console 輸入 `import socket; socket.gethostname()`，顯示 `SERVER` 代表程式在伺服器上執行。
 

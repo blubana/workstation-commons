@@ -7,6 +7,7 @@ from pathlib import Path
 
 RETENTION = 30 * 24 * 60 * 60
 INTERVAL = 10
+PRUNE_INTERVAL = 10 * 60
 MAX_BUCKETS = 2000
 BYTE_METRICS = {"mem_used", "gpu_mem_used", "user_mem"}
 
@@ -28,12 +29,18 @@ class History:
             db.execute("CREATE INDEX IF NOT EXISTS sample_time ON samples(time)")
 
     def record(self, timestamp, rows):
-        with closing(sqlite3.connect(self.path)) as db, db:
+        with closing(sqlite3.connect(self.path)) as db:
+            self.write(db, timestamp, rows, prune=True)
+
+    @staticmethod
+    def write(db, timestamp, rows, *, prune):
+        with db:
             db.executemany(
                 "INSERT OR REPLACE INTO samples (time, metric, user, value) VALUES (?, ?, ?, ?)",
                 ((timestamp, metric, user, value) for metric, user, value in rows),
             )
-            db.execute("DELETE FROM samples WHERE time < ?", (timestamp - RETENTION,))
+            if prune:
+                db.execute("DELETE FROM samples WHERE time < ?", (timestamp - RETENTION,))
 
     def purge_user(self, user):
         """Drop retained samples of a name before a new account reuses it (A1)."""
@@ -57,7 +64,7 @@ class History:
                 for timestamp, value in rows
             ]
 
-    def sample(self, system, users, kernels):
+    def sample(self, system, users, kernels, *, db=None, prune=True):
         def aggregate(devices, key, combine=sum):
             values = [value for device in devices or [] if (value := device.get(key)) is not None]
             return combine(values) if values else None
@@ -83,7 +90,10 @@ class History:
                 ("user_mem", user["user"], user["usage"]["mem_current"]),
                 ("user_cpu", user["user"], user["usage"]["cpu_percent"]),
             ])
-        self.record(system["time"], rows)
+        if db is None:
+            self.record(system["time"], rows)
+        else:
+            self.write(db, system["time"], rows, prune=prune)
 
 
 class Sampler:
@@ -92,10 +102,22 @@ class Sampler:
         self.thread = threading.Thread(target=self.run, args=(collect, history), daemon=True)
 
     def run(self, collect, history):
-        while not self.stop.is_set():
-            next_sample = time.monotonic() + INTERVAL
-            try:
-                history.sample(*collect())
-            except Exception:
-                logging.getLogger(__name__).exception("Metrics sample failed")
-            self.stop.wait(max(0, next_sample - time.monotonic()))
+        db = None
+        prune_at = float("-inf")
+        try:
+            while not self.stop.is_set():
+                now = time.monotonic()
+                next_sample = now + INTERVAL
+                try:
+                    if db is None:
+                        db = sqlite3.connect(history.path)
+                    prune = now >= prune_at
+                    history.sample(*collect(), db=db, prune=prune)
+                    if prune:
+                        prune_at = time.monotonic() + PRUNE_INTERVAL
+                except Exception:
+                    logging.getLogger(__name__).exception("Metrics sample failed")
+                self.stop.wait(max(0, next_sample - time.monotonic()))
+        finally:
+            if db is not None:
+                db.close()

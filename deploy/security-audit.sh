@@ -9,7 +9,15 @@ step semgrep;     semgrep scan --config p/default --config p/python --config p/r
 step osv-scanner; osv-scanner scan source -r . --format sarif --output-file "$OUT/osv.sarif" >/dev/null || rc=1
 step trivy;       trivy fs --scanners vuln,secret,misconfig -q --exit-code 1 --severity MEDIUM,HIGH,CRITICAL -f sarif -o "$OUT/trivy.sarif" . || rc=1
 step zizmor;      zizmor --format sarif .github/workflows > "$OUT/zizmor.sarif" || rc=1
-step bandit;      bandit -q -ll -r backend/compute_mgr npu -f sarif -o "$OUT/bandit.sarif" || rc=1
+step bandit
+# Prefer SARIF (needs bandit-sarif-formatter); otherwise fall back to json so the audit still completes.
+if bandit --help 2>&1 | grep -qw sarif; then
+  bandit -q -ll -r backend/compute_mgr npu -f sarif -o "$OUT/bandit.sarif" || rc=1
+else
+  echo "   bandit SARIF formatter missing -> json fallback ($OUT/bandit.json; install: pipx inject bandit bandit-sarif-formatter)"
+  bandit -q -ll -r backend/compute_mgr npu -f json -o "$OUT/bandit.json" || rc=1
+  python3 -c 'import json,sys; print("   bandit (json) issues >= medium:", len(json.load(open(sys.argv[1])).get("results", [])))' "$OUT/bandit.json" || rc=1
+fi
 python3 - "$OUT" <<'PY'
 import json, pathlib, sys
 out = pathlib.Path(sys.argv[1]); runs = []

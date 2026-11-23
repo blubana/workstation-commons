@@ -1,0 +1,15 @@
+#!/bin/bash
+# cm-batch — run a long job as a systemd unit inside the CALLER's user slice, so it shares
+# CPU/memory fairly with other users: alone it can use the whole machine (no CPU quota);
+# when others compute, CPU is split by equal CPUWeight and memory follows the per-user policy.
+#   sudo cm-batch NAME -- command args...   (run as root, still accounted to the sudo caller)
+# Manage: systemctl status|stop cm-batch-NAME ; journalctl -u cm-batch-NAME -f
+set -euo pipefail
+[ $# -ge 3 ] && [ "$2" = "--" ] || { sed -n 2,6p "$0"; exit 2; }
+name=$1; shift 2
+owner=${SUDO_USER:-$(id -un)}; uid=$(id -u "$owner")
+args=(--unit="cm-batch-$name" --slice="user-$uid.slice" --collect --same-dir
+      -p CPUWeight=100 -p IOWeight=100 -p OOMPolicy=continue --setenv=HOME="$HOME")
+if [ "$(id -u)" -ne 0 ]; then
+  echo "cm-batch is for root/owner jobs. Regular users are already in their own slice: use nohup or tmux." >&2; exit 1; fi
+exec systemd-run "${args[@]}" -- "$@"

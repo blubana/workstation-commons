@@ -27,6 +27,7 @@ case "$arg" in
 esac
 PY=$PREFIX/bin/python; [ -x "$PY" ] || { echo "unknown env $arg (see: spyder-kernel --list)"; exit 1; }
 NAME=$(basename "$PREFIX")
+[ -r /etc/profile.d/cm-threads.sh ] && . /etc/profile.d/cm-threads.sh
 RT=$HOME/.local/share/jupyter/runtime; mkdir -p "$RT"
 CF=$RT/kernel-$NAME-$$.json
 if "$PY" -c 'import spyder_kernels' 2>/dev/null; then MOD=spyder_kernels.console; else MOD=ipykernel_launcher; fi

@@ -523,6 +523,18 @@ impl Dashboard {
                 });
             }
         }
+        // 25% of VRAM is reserved for the local Windows operator (per-process cap is soft: cm_gpu_limit).
+        for gpu in self.data.system.iter().flat_map(|system| system.gpus.iter().flatten()) {
+            if let (Some(used), Some(total)) = (gpu.mem_used, gpu.mem_total) {
+                if total > 0 && used as f64 / total as f64 > 0.75 {
+                    items.push(Attention::warning(
+                        format!("GPU{} VRAM {:.1}/{:.1}G > 75% · local reserve low", gpu.index,
+                            used as f64 / (1u64 << 30) as f64, total as f64 / (1u64 << 30) as f64),
+                        Page::Hardware,
+                    ));
+                }
+            }
+        }
         if self.is_admin() {
             if let Some(Ok(Detail::Overview(overview))) = &self.detail {
                 if overview.restart_pending {

@@ -1,0 +1,12 @@
+ipykernel==6.29.5 \
+    --hash=sha256:afdb66ba5aa354b09b91379bac28ae4afebbb30e8b39510c9690afb7a10421b5 \
+    --hash=sha256:f093a22c4a40f8828f8e330a9c297cb93dcab13bd9678ded6de8e5cf81c56215
+jupyter-client==6.1.12 \
+    --hash=sha256:c4bca1d0846186ca8be97f4d2fa6d2bae889cce4892a167ffa1ba6bd1f73e782 \
+    --hash=sha256:e053a2c44b6fa597feebe2b3ecb5eea3e03d1d91cc94351a52931ee1426aecfc
+spyder-kernels==2.1.3 \
+    --hash=sha256:835d3b58b1eec4276ab4de9c1625deafc6c899ee4e6906b328d850d864840d88 \
+    --hash=sha256:ab5c2a90d44f0a26e7a6862e3cb73bb2d7084bc72f9336d8c2d2a78c145c4645
+wurlitzer==3.1.1 \
+    --hash=sha256:0b2749c2cde3ef640bf314a9f94b24d929fe1ca476974719a6909dfc568c3aac \
+    --hash=sha256:bfb9144ab9f02487d802b9ff89dbd3fa382d08f73e12db8adc4c2fb00cd39bd9

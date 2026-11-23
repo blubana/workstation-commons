@@ -1,0 +1,6 @@
+spyder-kernels==1.9.4 \
+    --hash=sha256:ca9d997c475b714b54d2fd67aa140837ec3630e91cbbc2e0cd190f1b0bd9fe9d \
+    --hash=sha256:db49941516cb8cab525835fd02a654f4e1644f460476392af891a360094127f9
+wurlitzer==3.1.1 \
+    --hash=sha256:0b2749c2cde3ef640bf314a9f94b24d929fe1ca476974719a6909dfc568c3aac \
+    --hash=sha256:bfb9144ab9f02487d802b9ff89dbd3fa382d08f73e12db8adc4c2fb00cd39bd9

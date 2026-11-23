@@ -10,6 +10,8 @@ from pathlib import Path
 
 from .identity import compute_accounts, resolve_uid
 
+SLOW_TTL = 10
+
 
 def read(path):
     try:
@@ -57,6 +59,8 @@ class Collector:
         self.accounts = compute_accounts
         self.lock = threading.Lock()
         self.previous = {}
+        self.discovery_at = float("-inf")
+        self.oomd_at = float("-inf")
         self.clock_ticks = os.sysconf("SC_CLK_TCK")
         self.page_size = os.sysconf("SC_PAGE_SIZE")
 
@@ -229,7 +233,11 @@ class Collector:
 
     def system(self, timestamp, gpus, current, previous, *, now=None):
         cpu = self.cpu(current, previous)
-        net, disk_io = self.io_rates(time.monotonic() if now is None else now, current, previous)
+        now = time.monotonic() if now is None else now
+        net, disk_io = self.io_rates(now, current, previous)
+        if now - self.oomd_at >= SLOW_TTL:
+            self.oomd_active = self.service_state()
+            self.oomd_at = now
         mem = fields(self.proc / "meminfo")
 
         def bytes_for(key):
@@ -257,7 +265,7 @@ class Collector:
             "swap": {"total": bytes_for("SwapTotal"),
                      "used": difference(bytes_for("SwapTotal"), bytes_for("SwapFree"))},
             "net": net, "disk_io": disk_io,
-            "gpus": gpus, "oomd": {"active": self.service_state()}, "time": timestamp,
+            "gpus": gpus, "oomd": {"active": self.oomd_active}, "time": timestamp,
         }
 
     @staticmethod
@@ -271,30 +279,18 @@ class Collector:
                 return multiplier * (value - old) / (now - then)
         return None
 
-    def collect(self):
-        with self.lock:
-            return self._collect()
+    @staticmethod
+    def process_uid(process):
+        return number(fields(process / "status").get("Uid"))
 
-    def _collect(self):
-        timestamp, now = time.time(), time.monotonic()
-        current, previous = {}, self.previous
-        gpus, attributed = self.gpu()
-        system = self.system(timestamp, gpus, current, previous, now=now)
-        accounts = {account.uid: account for account in self.accounts()}
-        sessions = {}
-        for path in entries(Path("/run/systemd/sessions")):
-            for line in read(path).splitlines():
-                if line.startswith("UID=") and (uid := number(line[4:])) is not None:
-                    sessions[uid] = sessions.get(uid, 0) + 1
-                    break
+    def discover(self, accounts):
         boot = number(fields(self.proc / "stat").get("btime"))
         kernels = []
         activity = {uid: [] for uid in accounts}
-        gpu_memory = dict.fromkeys(accounts, 0)
         for process in entries(self.proc):
             if not process.name.isdecimal():
                 continue
-            uid = number(fields(process / "status").get("Uid"))
+            uid = self.process_uid(process)
             if uid is None:
                 continue
             pid = int(process.name)
@@ -302,8 +298,6 @@ class Collector:
             if uid in accounts:
                 active = self.gpu_active(process)
                 activity[uid].append(active)
-                if attributed is not None:
-                    gpu_memory[uid] += attributed.get(pid, 0)
             cmdline = read(process / "cmdline").strip("\0").split("\0")
             kind = next((kind for marker, kind in (
                 ("ipykernel_launcher", "ipykernel"), ("spyder_kernels.console", "spyder_kernels")
@@ -322,22 +316,62 @@ class Collector:
             stat = read(process / "stat").rpartition(")")[2].split()
             if len(stat) < 22:
                 continue
-            utime, stime, start, rss = map(number, (stat[11], stat[12], stat[19], stat[21]))
-            cpu = (utime + stime) / self.clock_ticks if utime is not None and stime is not None else None
+            start = number(stat[19])
             env = re.match(r"^/opt/conda/envs/([^/]+)/", cmdline[0])
-            kernels.append({
+            kernels.append((process, uid, start, {
                 "id": f"{account.user}-{pid}", "user": account.user, "pid": pid,
                 "env": env[1] if env else None, "kind": kind, "connection_file": cmdline[index],
                 "started": boot + start / self.clock_ticks if boot is not None and start is not None else None,
-                "cpu_percent": self.rate(("pid", pid, start), cpu, now, current, previous),
-                "mem_rss": rss * self.page_size if rss is not None and rss >= 0 else None,
                 "gpu_active": active,
+            }))
+        return activity, kernels
+
+    def collect(self, *, fresh_discovery=False):
+        with self.lock:
+            return self._collect(fresh_discovery)
+
+    def _collect(self, fresh_discovery):
+        timestamp, now = time.time(), time.monotonic()
+        current, previous = {}, self.previous
+        gpus, attributed = self.gpu()
+        system = self.system(timestamp, gpus, current, previous, now=now)
+        accounts = {account.uid: account for account in self.accounts()}
+        sessions = {}
+        for path in entries(Path("/run/systemd/sessions")):
+            for line in read(path).splitlines():
+                if line.startswith("UID=") and (uid := number(line[4:])) is not None:
+                    sessions[uid] = sessions.get(uid, 0) + 1
+                    break
+        if (fresh_discovery or now - self.discovery_at >= SLOW_TTL
+                or accounts != self.discovery_accounts):
+            self.activity, self.discovered_kernels = self.discover(accounts)
+            self.discovery_accounts = accounts
+            self.discovery_at = now
+
+        # NVML reports live PIDs. Resolve their current owners even between discovery scans.
+        gpu_memory = dict.fromkeys(accounts, 0)
+        for pid, used in (attributed or {}).items():
+            uid = self.process_uid(self.proc / str(pid))
+            if uid in accounts:
+                gpu_memory[uid] += used
+
+        kernels = []
+        for process, uid, start, kernel in self.discovered_kernels:
+            stat = read(process / "stat").rpartition(")")[2].split()
+            if len(stat) < 22 or number(stat[19]) != start or self.process_uid(process) != uid:
+                continue
+            utime, stime, rss = map(number, (stat[11], stat[12], stat[21]))
+            cpu = (utime + stime) / self.clock_ticks if utime is not None and stime is not None else None
+            kernels.append({
+                **kernel,
+                "cpu_percent": self.rate(("pid", kernel["pid"], start), cpu, now, current, previous),
+                "mem_rss": rss * self.page_size if rss is not None and rss >= 0 else None,
             })
         users = []
         for uid, account in sorted(accounts.items()):
             group = self.cgroup / f"user-{uid}.slice"
             micros = number(fields(group / "cpu.stat").get("usage_usec"))
-            states = activity[uid]
+            states = self.activity[uid]
             active = True if True in states else (None if None in states else False)
             users.append({
                 "user": account.user, "uid": uid, "role": account.role,

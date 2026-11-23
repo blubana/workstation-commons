@@ -65,18 +65,26 @@ def create_app(*, collector=None, history=None, resolve_uid=identity.resolve_uid
     auth = Auth(resolve_uid)
     gateway = npu.Gateway()
     snapshot_lock = threading.Lock()
-    snapshot = None
+    snapshot = system_event = None
     last_snapshot = float("-inf")
     stream_counts = {}
     key_counts = {}
     key_lock = threading.Lock()
 
-    def collect():
-        nonlocal snapshot, last_snapshot
+    def sse_event(name, data):
+        return f"event: {name}\ndata: {json.dumps(data)}\n\n".encode()
+
+    def collect(*, for_stream=False):
+        nonlocal snapshot, last_snapshot, system_event
         with snapshot_lock:
             if time.monotonic() - last_snapshot >= 2:
                 snapshot = collector.collect()
                 last_snapshot = time.monotonic()
+                system_event = None
+            if for_stream:
+                if system_event is None:
+                    system_event = sse_event("system", snapshot[0])
+                return system_event, snapshot[1], snapshot[2]
             return snapshot
 
     @asynccontextmanager
@@ -158,7 +166,7 @@ def create_app(*, collector=None, history=None, resolve_uid=identity.resolve_uid
 
     @app.delete("/api/v1/kernels/{id}", status_code=204)
     def stop_kernel(id: str, actor: Principal):
-        kernel = next((item for item in scoped(collector.collect()[2], actor) if item["id"] == id), None)
+        kernel = next((item for item in scoped(collector.collect(fresh_discovery=True)[2], actor) if item["id"] == id), None)
         if kernel is None:
             raise HTTPException(404, "Kernel not found")
         helper.call("kernel-stop", {"pid": kernel["pid"], "owner": kernel["user"]}, actor.user)
@@ -186,14 +194,14 @@ def create_app(*, collector=None, history=None, resolve_uid=identity.resolve_uid
     @app.get("/api/v1/stream")
     async def stream(actor: Principal):
         def payloads():
-            system, users, kernels = collect()
-            return (("system", system), ("users", users_for(users, actor)), ("kernels", scoped(kernels, actor)))
+            system, users, kernels = collect(for_stream=True)
+            return system, sse_event("users", users_for(users, actor)), sse_event("kernels", scoped(kernels, actor))
 
         async def events():
             while True:
                 started = time.monotonic()
-                for name, data in await run_in_threadpool(payloads):
-                    yield f"event: {name}\ndata: {json.dumps(data)}\n\n"
+                for event in await run_in_threadpool(payloads):
+                    yield event
                 await asyncio.sleep(max(0, 2 - (time.monotonic() - started)))
 
         class LimitedStream(StreamingResponse):

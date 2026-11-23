@@ -1,6 +1,8 @@
+import json
+
 from fastapi.testclient import TestClient
 
-from compute_mgr import helper
+from compute_mgr import helper, host
 from compute_mgr.app import create_app
 from compute_mgr.history import History
 from compute_mgr.identity import Identity
@@ -63,3 +65,36 @@ def test_admin_helper_routes(collector, tmp_path, monkeypatch):
     assert ("key-remove", {"user": "alice", "fingerprint": "SHA256:abc/def"}, "admin") in actions
     assert ("policy-set", policy, "admin") in actions
     assert ("kernel-stop", {"pid": 24, "owner": "bob"}, "admin") in actions
+
+
+def test_audit_reads_only_needed_tail(tmp_path, monkeypatch):
+    path = tmp_path / "audit.jsonl"
+    event = {"time": 1, "actor": "admin", "action": "test", "target": "x", "ok": True}
+    old = json.dumps(dict(event, time=0)).encode() + b"\n"
+    events = [dict(event, target="界" * 23000), dict(event, time=2)]
+    path.write_bytes(
+        old * 10000 + json.dumps(events[0], ensure_ascii=False).encode() + b"\r\n"
+        + b'{"phase":"attempt"}\n' + b"x" * 100000 + b"\nnull\n"
+        + json.dumps(events[1]).encode()
+    )
+
+    class TailOnly:
+        def open(self, mode):
+            log = path.open(mode)
+            original_read = log.read
+
+            def read(size=-1):
+                assert log.tell() > len(old) * 9000
+                return original_read(size)
+
+            log.read = read
+            return log
+
+    monkeypatch.setattr(host, "AUDIT_LOG", TailOnly())
+    assert host.audit(2) == events[::-1]
+
+    monkeypatch.setattr(host, "AUDIT_LOG", path)
+    path.write_bytes(json.dumps(event).encode())
+    assert host.audit(100) == [event]
+    path.unlink()
+    assert host.audit(100) == []
