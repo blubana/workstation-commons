@@ -509,17 +509,17 @@ mod tests {
         let mut state = MockState::default();
         let http = client();
         let identity = Identity { user: "alice".into(), role: "admin".into() };
-        let view = |user: &str, range| View::History { metric: 4, user: Some(user.into()), range };
-        let Detail::History(alice) = source.detail(&http, &mut state, &view("alice", 0), Some(&identity)).await.unwrap() else {
-            panic!("missing history");
+        let view = |user: &str, range| View::History { users: Vec::new(), user: Some(user.into()), range };
+        let pick = |detail: Detail| match detail {
+            Detail::History(all, _) => all.into_iter().find(|(m, _)| *m == "user_mem").unwrap().1,
+            _ => panic!("missing history"),
         };
-        let Detail::History(bob) = source.detail(&http, &mut state, &view("bob", 3), Some(&identity)).await.unwrap() else {
-            panic!("missing history");
-        };
+        let alice = pick(source.detail(&http, &mut state, &view("alice", 0), Some(&identity)).await.unwrap()).unwrap();
+        let bob = pick(source.detail(&http, &mut state, &view("bob", 3), Some(&identity)).await.unwrap()).unwrap();
         assert!(bob.points.len() > alice.points.len());
         assert_ne!(alice.points.last(), bob.points.last());
         let regular = Identity { user: "alice".into(), role: "user".into() };
-        assert!(source.detail(&http, &mut state, &view("bob", 3), Some(&regular)).await.is_err());
+        assert!(pick(source.detail(&http, &mut state, &view("bob", 3), Some(&regular)).await.unwrap()).is_err());
     }
 
     #[test]
@@ -717,10 +717,13 @@ pub enum View {
     Wsl,
     Keys(String),
     Policy,
-    History { metric: usize, user: Option<String>, range: usize },
+    History { users: Vec<String>, user: Option<String>, range: usize },
     Envs,
     Audit,
 }
+
+#[derive(Clone)]
+pub struct UsageRank { pub user: String, pub cpu_avg: f64, pub cpu_peak: f64, pub mem_avg: f64, pub mem_peak: f64 }
 
 pub enum Detail {
     None,
@@ -729,7 +732,7 @@ pub enum Detail {
     Wsl(Wsl, Option<u64>),
     Keys(Vec<Key>),
     Policy(CurrentPolicy),
-    History(History),
+    History(Vec<(&'static str, Result<History>)>, Vec<UsageRank>),
     Envs(Vec<Env>),
     Audit(Vec<Audit>),
 }
@@ -938,6 +941,41 @@ impl Source {
         Ok(entries)
     }
 
+    async fn history_one(&self, http: &HttpClient, metric: &'static str, user: Option<&str>, range: usize, identity: Option<&Identity>, is_mock: bool) -> Result<History> {
+        let (_, seconds, step) = RANGES[range];
+        let end = epoch();
+        let mut route = format!("/history?metric={metric}&since={}&step={step}", end.saturating_sub(seconds));
+        let user = if metric.starts_with("user_") {
+            let user = user.ok_or("No user available for this metric")?;
+            if !can_stop(identity, user) {
+                return Err("History access denied".into());
+            }
+            route.push_str(&format!("&user={}", encode_segment(user)));
+            Some(user)
+        } else {
+            None
+        };
+        let fixture = format!("history-{metric}.json");
+        let mut history: History = match (is_mock, user) {
+            (true, Some(user)) => {
+                let histories: std::collections::BTreeMap<String, History> = self.get(http, "", &fixture).await?;
+                histories.get(user).cloned().unwrap_or(History { points: Vec::new(), window: None })
+            }
+            _ => self.get(http, &route, &fixture).await?,
+        };
+        let end = if is_mock {
+            history.points.last().map_or(end as f64, |(time, _)| *time)
+        } else {
+            end as f64
+        };
+        let start = end - seconds as f64;
+        history.window = Some([start, end]);
+        if is_mock {
+            history.points.retain(|(time, _)| *time >= start);
+        }
+        Ok(history)
+    }
+
     pub async fn detail(&self, http: &HttpClient, mock: &mut MockState, view: &View, identity: Option<&Identity>) -> Result<Detail> {
         let is_mock = matches!(self, Self::Mock(_));
         if matches!(view, View::Keys(_) | View::Policy | View::Audit | View::Wsl) && !admin(identity) {
@@ -966,40 +1004,27 @@ impl Source {
             View::Policy => self.policy(http, mock).await.map(Detail::Policy),
             View::Audit => self.audit(http, mock).await.map(Detail::Audit),
             View::Envs => self.get(http, "/envs", "envs.json").await.map(Detail::Envs),
-            View::History { metric, user, range } => {
-                let metric = METRICS[*metric];
-                let (_, seconds, step) = RANGES[*range];
-                let end = epoch();
-                let mut route = format!("/history?metric={metric}&since={}&step={step}", end.saturating_sub(seconds));
-                let user = if metric.starts_with("user_") {
-                    let user = user.as_deref().ok_or("No user available for this metric")?;
-                    if !can_stop(identity, user) {
-                        return Err("History access denied".into());
-                    }
-                    route.push_str(&format!("&user={}", encode_segment(user)));
-                    Some(user)
-                } else {
-                    None
-                };
-                let fixture = format!("history-{metric}.json");
-                let mut history: History = match (is_mock, user) {
-                    (true, Some(user)) => {
-                        let histories: std::collections::BTreeMap<String, History> = self.get(http, "", &fixture).await?;
-                        histories.get(user).cloned().unwrap_or(History { points: Vec::new(), window: None })
-                    }
-                    _ => self.get(http, &route, &fixture).await?,
-                };
-                let end = if is_mock {
-                    history.points.last().map_or(end as f64, |(time, _)| *time)
-                } else {
-                    end as f64
-                };
-                let start = end - seconds as f64;
-                history.window = Some([start, end]);
-                if is_mock {
-                    history.points.retain(|(time, _)| *time >= start);
+            View::History { users, user, range } => {
+                let mut all = Vec::with_capacity(METRICS.len());
+                for metric in METRICS {
+                    all.push((metric, self.history_one(http, metric, user.as_deref(), *range, identity, is_mock).await));
                 }
-                Ok(Detail::History(history))
+                let mut board = Vec::new();
+                for name in users {
+                    let (cpu, mem) = tokio::join!(
+                        self.history_one(http, "user_cpu", Some(name), *range, identity, is_mock),
+                        self.history_one(http, "user_mem", Some(name), *range, identity, is_mock));
+                    let values = |h: Result<History>| h.map(|h| h.points.into_iter().filter_map(|(_, v)| v.filter(|v| v.is_finite())).collect::<Vec<_>>()).unwrap_or_default();
+                    let (cpu, mem) = (values(cpu), values(mem));
+                    if cpu.is_empty() && mem.is_empty() { continue; }
+                    let avg = |v: &[f64]| if v.is_empty() { 0.0 } else { v.iter().sum::<f64>() / v.len() as f64 };
+                    board.push(UsageRank {
+                        user: name.clone(), cpu_avg: avg(&cpu), cpu_peak: cpu.iter().copied().fold(0.0, f64::max),
+                        mem_avg: avg(&mem), mem_peak: mem.iter().copied().fold(0.0, f64::max),
+                    });
+                }
+                board.sort_by(|a, b| b.cpu_avg.total_cmp(&a.cpu_avg));
+                Ok(Detail::History(all, board))
             }
         }
     }

@@ -696,36 +696,80 @@ fn history_segments(points: &[(f64, Option<f64>)]) -> Vec<Vec<(f64, f64)>> {
 }
 
 fn history(frame: &mut Frame, app: &Dashboard, area: Rect) {
-    let [filter, graph] = Split::vertical([Constraint::Length(1), Constraint::Fill(1)]).areas(area);
-    let metric = METRICS[app.metric];
+    let [filter, grid] = Split::vertical([Constraint::Length(1), Constraint::Fill(1)]).areas(area);
     let (range, seconds, _) = RANGES[app.range];
-    let user = if metric.starts_with("user_") {
-        format!(" · User {}", app.history_user.as_deref().unwrap_or(NA))
-    } else {
-        String::new()
-    };
-    frame.render_widget(Paragraph::new(format!("Metric {metric}{user} · Range {range}")), filter);
-    let Some(Ok(Detail::History(history))) = &app.detail else {
-        detail_placeholder(frame, app, graph);
+    let user = app.history_user.as_deref().unwrap_or(NA);
+    frame.render_widget(Paragraph::new(format!("Range {range} · User {user} · {} metrics", METRICS.len())), filter);
+    let Some(Ok(Detail::History(all, board))) = &app.detail else {
+        detail_placeholder(frame, app, grid);
         return;
     };
+    let board_height = if board.is_empty() { 0 } else { board.len().min(8) as u16 + 3 };
+    let [board_area, grid] = Split::vertical([Constraint::Length(board_height), Constraint::Fill(1)]).areas(grid);
+    if !board.is_empty() {
+        leaderboard(frame, board, range, board_area);
+    }
+    let cols = if grid.width >= 150 { 4 } else if grid.width >= 90 { 3 } else { 2 };
+    let rows = all.len().div_ceil(cols);
+    let row_areas = Split::vertical(vec![Constraint::Fill(1); rows]).split(grid);
+    for (index, (metric, result)) in all.iter().enumerate() {
+        let cell = Split::horizontal(vec![Constraint::Fill(1); cols]).split(row_areas[index / cols])[index % cols];
+        history_chart(frame, metric, result, seconds, range, index == app.metric, cell);
+    }
+}
+
+fn leaderboard(frame: &mut Frame, board: &[crate::api::UsageRank], range: &str, area: Rect) {
+    let top_cpu = board.first().map_or(1.0, |u| u.cpu_avg).max(1.0);
+    let mem_king = board.iter().max_by(|a, b| a.mem_peak.total_cmp(&b.mem_peak)).map(|u| u.user.clone());
+    let width = usize::from(area.width.saturating_sub(70)).clamp(4, 40);
+    let mut lines = vec![Line::styled(format!(" {:<4} {:<14} {:<w$} {:>8} {:>8} {:>10} {:>10}", "#", "user", "", "CPU avg", "peak", "mem avg", "mem peak", w = width), style(Token::Faint))];
+    for (i, u) in board.iter().take(8).enumerate() {
+        let medal = match i { 0 => "🥇", 1 => "🥈", 2 => "🥉", _ => "  " };
+        let filled = ((u.cpu_avg / top_cpu) * width as f64).round() as usize;
+        let bar: String = "█".repeat(filled.min(width)) + &"·".repeat(width - filled.min(width));
+        let crown = if mem_king.as_deref() == Some(u.user.as_str()) && u.mem_peak > 0.0 { " 🐘" } else { "" };
+        lines.push(Line::from(vec![
+            Span::raw(format!(" {medal}{:<2} {:<14} ", i + 1, clean(&u.user))),
+            Span::styled(bar, style(if i == 0 { Token::Warn } else { Token::Info })),
+            Span::raw(format!(" {:>8} {:>8} {:>10} {:>10}{crown}", percent(Some(u.cpu_avg)), percent(Some(u.cpu_peak)),
+                bytes(Some(u.mem_avg as u64)), bytes(Some(u.mem_peak as u64)))),
+        ]));
+    }
+    frame.render_widget(Paragraph::new(lines).block(block(format!("Leaderboard · {range} · 🐘 memory champion"), false)), area);
+}
+
+fn history_chart(frame: &mut Frame, metric: &str, result: &Result<crate::api::History, String>, seconds: u64, range: &str, focused: bool, area: Rect) {
+    let memory = matches!(metric, "mem_used" | "gpu_mem_used" | "user_mem");
+    let rate = metric.starts_with("net_") || metric.starts_with("disk_");
+    let unit = |value: f64| if memory { bytes(Some(value as u64)) }
+        else if rate { format!("{}/s", bytes(Some(value as u64))) }
+        else if metric == "gpu_temp" { format!("{value:.0}°C") }
+        else { percent(Some(value)) };
+    let history = match result {
+        Ok(history) => history,
+        Err(error) => {
+            frame.render_widget(Paragraph::new(clean(error)).style(style(Token::Faint)).block(block(metric.to_string(), focused)), area);
+            return;
+        }
+    };
     let segments = history_segments(&history.points);
+    let latest_value = segments.iter().flatten().last().map(|(_, y)| *y);
+    let title = format!("{metric}  {}", latest_value.map(unit).unwrap_or_else(|| NA.into()));
     if segments.is_empty() {
-        frame.render_widget(Paragraph::new("No samples in this range · r change range"), graph);
+        frame.render_widget(Paragraph::new("No samples").style(style(Token::Faint)).block(block(title.clone(), focused)), area);
         return;
     }
     let latest = history.points.last().map_or(0.0, |(time, _)| *time);
     let [start, end] = history.window.unwrap_or([latest - seconds as f64, latest]);
-    let memory = matches!(metric, "mem_used" | "gpu_mem_used" | "user_mem");
-    let max = segments.iter().flatten().map(|(_, y)| *y).fold(if memory { 1.0 } else { 100.0 }, f64::max);
-    let unit = |value: f64| if memory { bytes(Some(value as u64)) } else { percent(Some(value)) };
+    let floor = if memory || rate { 1.0 } else { 100.0 };
+    let max = segments.iter().flatten().map(|(_, y)| *y).fold(floor, f64::max);
     let series = segments.iter().map(|segment| Dataset::default()
         .marker(Marker::Braille)
         .graph_type(if segment.len() == 1 { GraphType::Scatter } else { GraphType::Line })
         .style(style(Token::Info)).data(segment)).collect();
-    frame.render_widget(Chart::new(series).block(block("History", true))
-        .x_axis(Axis::default().bounds([start, end]).labels([format!("-{range}"), "Latest".into()]))
-        .y_axis(Axis::default().bounds([0.0, max]).labels([unit(0.0), unit(max / 2.0), unit(max)])), graph);
+    frame.render_widget(Chart::new(series).block(block(title.clone(), focused))
+        .x_axis(Axis::default().bounds([start, end]).labels([format!("-{range}"), "now".into()]))
+        .y_axis(Axis::default().bounds([0.0, max]).labels([unit(0.0), unit(max)])), area);
 }
 
 fn wrap_words(text: &str, width: usize) -> Vec<String> {
@@ -917,7 +961,7 @@ mod tests {
             for (page, expected) in Page::ALL.into_iter().zip([
                 "Memory budget",
                 "LINGER", "RSS", "Guaranteed", "CT2000T500SSD8", "Ubuntu-24.04",
-                "SPYDER-KERNELS", "Latest", "RESULT",
+                "SPYDER-KERNELS", "cpu_percent", "RESULT",
             ]) {
                 let mut app = fixture_app(&source(), layout, page).await;
                 assert!(app.data.errors.is_empty(), "{:?}", app.data.errors);
